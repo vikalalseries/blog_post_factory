@@ -1,11 +1,10 @@
 agent-framework-core
 agent-framework-gemini
 agent-framework-orchestrations
-chromadb
-sentence-transformers
 python-dotenv
 serpapi
 fastapi
 uvicorn
 fpdf2
 pypdf
+httpx

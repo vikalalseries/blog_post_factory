@@ -1,4 +1,4 @@
-"""One-time ingestion routine: gather -> chunk -> embed -> store.
+"""One-time ingestion routine: gather -> chunk -> embed (Gemini API) -> store.
 
 Run it whenever you add or change files in the sources folder:
 
@@ -15,7 +15,7 @@ from pathlib import Path
 
 from blog_factory import config
 from blog_factory.rag.embeddings import embed
-from blog_factory.rag.store import get_collection, reset_collection
+from blog_factory.rag.store import Record, VectorStore, load_store
 
 SUPPORTED_SUFFIXES = {".txt", ".md"}
 
@@ -76,7 +76,7 @@ def ingest(reset: bool = False) -> int:
         print(f"No .txt/.md files found in {config.SOURCES_DIR}. Add some sources first.")
         return 0
 
-    collection = reset_collection() if reset else get_collection()
+    store = VectorStore() if reset else load_store()
     total = 0
 
     for path in files:
@@ -86,24 +86,21 @@ def ingest(reset: bool = False) -> int:
         if not chunks:
             continue
 
-        # Remove stale chunks from a previous version of this file.
-        collection.delete(where={"source": source})
-
-        collection.add(
-            ids=[_chunk_id(source, i, c) for i, c in enumerate(chunks)],
-            documents=chunks,
-            embeddings=embed(chunks),
-            metadatas=[{"source": source, "chunk": i} for i in range(len(chunks))],
-        )
+        vectors = embed(chunks, task_type="RETRIEVAL_DOCUMENT")
+        store.replace_source(source, [
+            Record(id=_chunk_id(source, i, c), text=c, source=source, chunk=i, embedding=v)
+            for i, (c, v) in enumerate(zip(chunks, vectors))
+        ])
         print(f"  {source}: {len(chunks)} chunk(s)")
         total += len(chunks)
 
-    print(f"Ingested {total} chunk(s) from {len(files)} file(s) into '{config.COLLECTION_NAME}'.")
+    store.save()
+    print(f"Ingested {total} chunk(s) from {len(files)} file(s) into {config.VECTOR_STORE_PATH.name}.")
     return total
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Ingest the sources folder into Chroma.")
+    parser = argparse.ArgumentParser(description="Ingest the sources folder into the vector store.")
     parser.add_argument("--reset", action="store_true", help="wipe the collection before ingesting")
     args = parser.parse_args()
     ingest(reset=args.reset)

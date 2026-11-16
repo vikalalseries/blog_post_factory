@@ -32,11 +32,13 @@ MAX_SEARCHES: int = int(os.getenv("MAX_SEARCHES", "3"))
 
 # --- RAG ----------------------------------------------------------------------
 SOURCES_DIR: Path = PROJECT_ROOT / os.getenv("SOURCES_DIR", "sources")
-CHROMA_DIR: Path = PROJECT_ROOT / os.getenv("CHROMA_DIR", "chroma_db")
-COLLECTION_NAME: str = os.getenv("COLLECTION_NAME", "blog_sources")
+# Pre-built vector index (JSON). Committed so read-only serverless hosts can use it.
+VECTOR_STORE_PATH: Path = PROJECT_ROOT / os.getenv("VECTOR_STORE_PATH", "vector_store.json")
 
-# Small, free, local embedding model (downloaded once on first use, ~90 MB).
-EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2")
+# Hosted Gemini embedding model (no local model download). Vectors are truncated to
+# EMBEDDING_DIMENSIONS to keep the index small; changing either requires a re-ingest.
+EMBEDDING_MODEL: str = os.getenv("EMBEDDING_MODEL", "gemini-embedding-001")
+EMBEDDING_DIMENSIONS: int = int(os.getenv("EMBEDDING_DIMENSIONS", "768"))
 
 # Chunking: target words per chunk, and how many words consecutive chunks share.
 CHUNK_SIZE_WORDS: int = int(os.getenv("CHUNK_SIZE_WORDS", "180"))

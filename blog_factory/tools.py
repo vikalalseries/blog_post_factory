@@ -23,7 +23,7 @@ def retrieve_from_sources(
     Returns the most relevant passages, each labelled with the source file it came from.
     Call this several times with different phrasings to cover sub-topics.
     """
-    from blog_factory.rag.retriever import retrieve  # lazy: loads the embedding model
+    from blog_factory.rag.retriever import retrieve  # lazy import
 
     chunks = retrieve(topic)
     if not chunks:
