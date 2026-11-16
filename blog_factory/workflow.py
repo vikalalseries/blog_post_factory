@@ -136,6 +136,12 @@ async def run_factory(
                 print(chunk, end="", flush=True)
 
         elif event.type in ("failed", "error", "executor_failed"):
+            d = getattr(event, "details", None)
+            if d is not None:
+                print(f"\n[{event.type}] {d.error_type}: {d.message}\n{d.traceback or ''}", flush=True)
+                raise RuntimeError(
+                    f"Failed during the {current_stage or 'pipeline'} step: {d.error_type}: {d.message}"
+                )
             raise RuntimeError(await _diagnose(current_stage or "pipeline"))
 
     # The editor is the last agent in the chain; its reply is the finished post.
