@@ -19,7 +19,8 @@ from pydantic import BaseModel, Field
 
 from blog_factory import config
 from blog_factory.workflow import run_factory
-from main import save_post
+from blog_factory import storage
+from main import slugify
 
 UI_FILE = Path(__file__).parent / "ui" / "index.html"
 SUPPORTED_SUFFIXES = {".txt", ".md"}
@@ -160,40 +161,38 @@ async def generate(req: GenerateRequest) -> StreamingResponse:
     return StreamingResponse(stream(), media_type="text/event-stream")
 
 
-def _post_path(name: str) -> Path:
-    path = config.OUTPUT_DIR / Path(name).name
-    if path.suffix != ".md" or not path.is_file():
+def _read_post(name: str) -> str:
+    try:
+        return storage.read(name)
+    except storage.PostNotFound:
         raise HTTPException(404, "Post not found")
-    return path
 
 
 @app.get("/api/posts")
 def list_posts() -> dict:
-    posts = []
-    if config.OUTPUT_DIR.is_dir():
-        for path in sorted(config.OUTPUT_DIR.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True):
-            text = path.read_text(encoding="utf-8", errors="ignore")
-            title = next((l[2:].strip() for l in text.splitlines() if l.startswith("# ")), path.stem)
-            posts.append({"name": path.name, "title": title, "modified": path.stat().st_mtime})
-    return {"posts": posts}
+    try:
+        return {"posts": storage.list_posts()}
+    except Exception as exc:
+        raise HTTPException(500, f"Could not list saved posts: {exc}")
 
 
 @app.get("/api/posts/{name}")
 def read_post(name: str) -> dict:
-    return {"name": name, "content": _post_path(name).read_text(encoding="utf-8")}
+    return {"name": name, "content": _read_post(name)}
 
 
 @app.get("/api/posts/{name}/pdf")
 def export_pdf(name: str) -> Response:
     from blog_factory.pdf_export import post_to_pdf
 
-    path = _post_path(name)
-    pdf = post_to_pdf(path.read_text(encoding="utf-8"))
+    pdf = post_to_pdf(_read_post(name))
     return Response(pdf, media_type="application/pdf",
-                    headers={"Content-Disposition": f'attachment; filename="{path.stem}.pdf"'})
+                    headers={"Content-Disposition": f'attachment; filename="{Path(name).stem}.pdf"'})
 
 
 @app.post("/api/save")
 def save(req: SaveRequest) -> dict:
-    path = save_post(req.post, req.topic, None)
-    return {"path": str(path)}
+    try:
+        return {"path": storage.save(slugify(req.topic) + ".md", req.post)}
+    except Exception as exc:
+        raise HTTPException(500, f"Save failed: {exc}")
