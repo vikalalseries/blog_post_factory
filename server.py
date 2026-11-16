@@ -168,6 +168,39 @@ def _read_post(name: str) -> str:
         raise HTTPException(404, "Post not found")
 
 
+@app.get("/api/img")
+def proxy_image(url: str) -> Response:
+    """Serve Wikimedia images through this server (with retries) so the browser never hotlinks them."""
+    import time
+    import urllib.error
+    import urllib.parse
+    import urllib.request
+
+    parsed = urllib.parse.urlparse(url)
+    host = parsed.hostname or ""
+    if parsed.scheme not in ("http", "https") or not (host == "wikimedia.org" or host.endswith(".wikimedia.org")):
+        raise HTTPException(400, "Only Wikimedia images can be loaded")
+    req = urllib.request.Request(url, headers={"User-Agent": "BlogPostFactory/1.0 (image proxy)"})
+    for attempt in range(3):
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                ctype = resp.headers.get("Content-Type", "")
+                data = resp.read(8_000_000)
+            if not ctype.startswith("image/"):
+                raise HTTPException(502, "Not an image")
+            return Response(data, media_type=ctype, headers={"Cache-Control": "public, max-age=86400"})
+        except urllib.error.HTTPError as exc:
+            if exc.code not in (429, 500, 502, 503, 504) or attempt == 2:
+                raise HTTPException(502, f"Image host returned {exc.code}")
+        except HTTPException:
+            raise
+        except Exception:
+            if attempt == 2:
+                raise HTTPException(502, "Could not fetch the image")
+        time.sleep(1.5 * (attempt + 1))
+    raise HTTPException(502, "Could not fetch the image")
+
+
 @app.get("/api/posts")
 def list_posts() -> dict:
     try:

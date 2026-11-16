@@ -127,5 +127,5 @@ def find_image(
         info = (page.get("imageinfo") or [{}])[0]
         if info.get("mime") in ("image/jpeg", "image/png", "image/webp") and info.get("thumburl"):
             title = page.get("title", "").removeprefix("File:").rsplit(".", 1)[0]
-            found.append(f"{info['thumburl']} | {title}")
+            found.append(f"{info['thumburl'].split('?')[0]} | {title}")
     return "\n".join(found) or "NO_IMAGE: nothing found for this query."

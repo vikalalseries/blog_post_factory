@@ -99,7 +99,23 @@ def make_client() -> GeminiChatClient:
             "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key "
             "from https://aistudio.google.com"
         )
-    return GeminiChatClient(api_key=config.GEMINI_API_KEY, model=config.GEMINI_MODEL)
+    # Retry temporary Gemini failures (overload 503, rate limit 429, timeouts) instead of
+    # failing the whole post on the first hiccup.
+    from google import genai
+    from google.genai import types
+
+    http = types.HttpOptions(
+        timeout=120_000,
+        retry_options=types.HttpRetryOptions(
+            attempts=5,
+            initial_delay=2.0,
+            max_delay=30.0,
+            exp_base=2.0,
+            http_status_codes=[408, 429, 500, 502, 503, 504],
+        ),
+    )
+    genai_client = genai.Client(api_key=config.GEMINI_API_KEY, http_options=http)
+    return GeminiChatClient(client=genai_client, model=config.GEMINI_MODEL)
 
 
 def build_agents(

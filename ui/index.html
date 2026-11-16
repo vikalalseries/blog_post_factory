@@ -273,7 +273,7 @@ function md(text) {
     const l = raw.trim();
     if (!l) { flush(); continue; }
     let m;
-    if ((m = l.match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/))) { flush(); out.push(`<img src="${esc(m[2])}" alt="${esc(m[1])}" loading="lazy" onerror="this.remove()">`); }
+    if ((m = l.match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/))) { flush(); out.push(`<img src="/api/img?url=${encodeURIComponent(m[2])}" alt="${esc(m[1])}" loading="lazy" onerror="this.remove()">`); }
     else if ((m = l.match(/^#\s+(.*)/))) { flush(); out.push(`<h2>${inline(m[1])}</h2>`); }
     else if ((m = l.match(/^#{2,}\s+(.*)/))) { flush(); out.push(`<h3>${inline(m[1])}</h3>`); }
     else if ((m = l.match(/^(?:[-*]|\d+\.)\s+(.*)/))) list.push(m[1]);

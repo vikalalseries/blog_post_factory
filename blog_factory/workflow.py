@@ -28,6 +28,27 @@ STAGE_LABELS = {
 }
 
 
+# Gemini rejects empty messages, so an agent that returns nothing is handed on as this.
+EMPTY_HANDOFF = "NO_FACTS_FOUND: the previous step returned no content."
+
+
+async def _diagnose(stage: str) -> str:
+    """The framework hides Gemini's real error, so probe the API to explain a failure."""
+    from agent_framework import Agent
+
+    from blog_factory.agents import make_client
+
+    try:
+        probe = Agent(client=make_client(), name="probe", instructions="Reply with OK.")
+        await probe.run("ping")
+    except Exception as exc:
+        return f"Gemini request failed during the {stage} step: {exc}"
+    return (
+        f"Gemini failed during the {stage} step, but the API is reachable now. "
+        "It was most likely a temporary overload or a blocked/empty response. Please try again."
+    )
+
+
 class ReplyToUserTurn(Executor):
     """Pass only the previous agent's final text to the next agent, as a user message.
 
@@ -37,7 +58,8 @@ class ReplyToUserTurn(Executor):
 
     @handler
     async def forward(self, prior: AgentExecutorResponse, ctx: WorkflowContext[list[Message]]) -> None:
-        await ctx.send_message([Message(role="user", contents=[prior.agent_response.text])])
+        text = prior.agent_response.text.strip() or EMPTY_HANDOFF
+        await ctx.send_message([Message(role="user", contents=[text])])
 
 
 class NumberSources(Executor):
@@ -45,7 +67,7 @@ class NumberSources(Executor):
 
     @handler
     async def forward(self, prior: AgentExecutorResponse, ctx: WorkflowContext[list[Message]]) -> None:
-        numbered, urls = number_sources(prior.agent_response.text)
+        numbered, urls = number_sources(prior.agent_response.text.strip() or EMPTY_HANDOFF)
         table = "\n".join(f"[{i}] {u}" for i, u in enumerate(urls, 1))
         text = f"{numbered}\n\nSOURCES:\n{table}" if urls else numbered
         await ctx.send_message([Message(role="user", contents=[text])])
@@ -92,9 +114,11 @@ async def run_factory(
     reset_search_count()
     workflow = build_workflow(words_min, words_max, tone, images)
     stages: dict[str, str] = {}
+    current_stage = ""
 
     async for event in workflow.run(topic, stream=True):
         if event.type == "executor_invoked" and event.executor_id in STAGE_LABELS:
+            current_stage = event.executor_id
             if verbose:
                 print(f"\n\n>>> {STAGE_LABELS[event.executor_id]} ...\n", flush=True)
             if on_event:
@@ -112,7 +136,7 @@ async def run_factory(
                 print(chunk, end="", flush=True)
 
         elif event.type in ("failed", "error", "executor_failed"):
-            raise RuntimeError(f"Workflow failed: {event.details or event.data}")
+            raise RuntimeError(await _diagnose(current_stage or "pipeline"))
 
     # The editor is the last agent in the chain; its reply is the finished post.
     final_post = stages.get("editor", "").strip()
