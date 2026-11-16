@@ -1,0 +1,9 @@
+How Chess Became the Modern Game
+
+In medieval shatranj, the queen (then called the vizier or fers) could move only one square diagonally, and the bishop (the alfil) could jump exactly two squares diagonally. This made the game slow, and a single match could last for many hours.
+
+Around the late 15th century, in southern Europe, the rules changed dramatically. The queen gained the ability to move any number of squares in any direction, and the bishop gained its modern long diagonal move. Because the new queen was so powerful, the style was sometimes called "mad queen chess." The change made games faster and more aggressive, and it is widely seen as the birth of modern chess.
+
+Other rules took longer to settle. Castling developed in several regional variants before its modern form became standard, and the en passant pawn capture was accepted gradually. Pawn promotion to any piece, rather than only to a queen, also became the norm over time.
+
+The printing press helped spread the new rules. One of the earliest surviving printed chess books is by the Spanish author Luis Ramírez de Lucena, published around 1497, which discussed the new style of play and included chess problems.

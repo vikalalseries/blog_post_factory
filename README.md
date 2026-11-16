@@ -1,0 +1,66 @@
+# Blog Post Factory
+
+Three cooperating agents built with **Microsoft Agent Framework** and **Google Gemini (free tier)**:
+
+```
+Your topic → researcher (RAG over ./sources) → writer (drafts) → editor (polishes) → output/<topic>.md
+```
+
+| Agent | Sees | Job |
+|---|---|---|
+| researcher | the topic + `retrieve_from_sources` tool | Bulleted facts from your sources, each tagged with its file |
+| writer | only the researcher's bullets | Title + 3–4 paragraphs, using only those facts |
+| editor | only the writer's draft | Tightens, fixes grammar, returns the final Markdown |
+
+## Project layout
+
+```
+blog_post_factory/
+├── main.py                  # CLI entry point
+├── blog_factory/
+│   ├── config.py            # all settings (model, paths, chunk sizes, top-k)
+│   ├── agents.py            # researcher / writer / editor + their instructions
+│   ├── tools.py             # retrieve_from_sources tool
+│   ├── workflow.py          # SequentialBuilder wiring + streaming runner
+│   └── rag/
+│       ├── ingest.py        # gather → chunk → embed → store
+│       ├── retriever.py     # retrieve (runs on every query)
+│       ├── embeddings.py    # local sentence-transformers model
+│       └── store.py         # local Chroma collection
+├── sources/                 # your reference material (.txt / .md)
+├── chroma_db/               # vector DB (generated, git-ignored)
+└── output/                  # finished posts (generated, git-ignored)
+```
+
+## Setup (Windows PowerShell)
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+pip install --pre -r requirements.txt
+copy .env.example .env        # then put your Gemini key in .env
+```
+
+Get a free key at <https://aistudio.google.com>.
+
+## Run
+
+```powershell
+# 1. Ingest sources (re-run whenever you add/change files in sources/)
+python -m blog_factory.rag.ingest --reset
+
+# 2. Generate a post
+python main.py "the history of chess"
+python main.py "how computers changed chess" -o output/computers.md
+python main.py "the history of chess" --quiet   # only print the final post
+```
+
+The repo ships with three sample chess articles in `sources/` so you can try it straight away.
+Replace them with your own material for any topic.
+
+## Troubleshooting
+
+- **Researcher says NO_FACTS_FOUND** — the topic isn't covered by `sources/`, or ingestion wasn't run.
+- **Writer/editor invent facts** — tighten the instructions in `blog_factory/agents.py`.
+- **429 / quota errors** — you hit the Gemini free-tier rate limit; wait a minute, or set
+  `GEMINI_MODEL=gemini-2.5-flash-lite` in `.env`.
+- **First run is slow** — the embedding model (~90 MB) downloads once.

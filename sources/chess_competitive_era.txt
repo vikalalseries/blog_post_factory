@@ -1,0 +1,9 @@
+The Competitive Era and Computer Chess
+
+The first modern international chess tournament was held in London in 1851 and was won by the German player Adolf Anderssen. In 1886, Wilhelm Steinitz defeated Johannes Zukertort in a match widely recognized as the first official World Chess Championship. Steinitz is also remembered for developing positional principles that shaped how the game was understood.
+
+The international chess federation, FIDE (Fédération Internationale des Échecs), was founded in Paris in 1924. It began organizing the Chess Olympiad and, from 1948 onward, took control of the World Championship cycle.
+
+The 1972 World Championship match in Reykjavík between the American Bobby Fischer and the Soviet champion Boris Spassky drew enormous public attention during the Cold War. Fischer won, ending a long period of Soviet dominance of the title.
+
+Computers changed chess profoundly. In 1997, IBM's Deep Blue defeated reigning world champion Garry Kasparov in a six-game match, the first time a computer beat a world champion under standard tournament conditions. Today, chess engines far exceed human strength and are used by players at every level for training and analysis, while online platforms let millions of people play each day.

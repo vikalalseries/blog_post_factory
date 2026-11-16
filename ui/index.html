@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog Post Factory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box}
+html,body{height:100%;overflow:hidden}
+body{margin:0;font-family:Inter,Arial,sans-serif;color:#111827;background:#F5F6FA}
+.card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+.lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B6475}
+.mut{font-size:13px;color:#5B6475}
+.btn{font:600 14px Inter,Arial,sans-serif;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid #D1D5DB;background:#fff;color:#111827;cursor:pointer}
+.btn:hover:not(:disabled){background:#F3F4F6}
+.btn.pri{background:#4338CA;border-color:#4338CA;color:#fff}
+.btn.pri:hover:not(:disabled){background:#3730A3}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn:focus-visible,input:focus-visible,.nav:focus-visible,.tab:focus-visible{outline:2px solid #4338CA;outline-offset:2px}
+.nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;color:#C7CBE0;text-decoration:none;cursor:pointer}
+.nav:hover{background:#242949}
+.nav.on{background:#2A2F57;color:#fff}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.chunk{border:1px solid #E5E7EB;border-radius:8px;padding:12px;font-size:13px;line-height:1.5;color:#374151}
+.chunk .pill{margin-bottom:6px;background:#EEF2FF;color:#3730A3;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
+.app{display:flex;height:100vh}
+aside.side{width:248px;flex:none;background:#1B1F3B;padding:18px 14px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
+main{flex:1;padding:16px 28px;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;overflow:hidden}
+.hidden{display:none!important}
+
+.form{padding:12px 16px;display:flex;gap:14px;align-items:flex-end}
+.form input[type=text]{height:44px;border:1px solid #D1D5DB;border-radius:8px;padding:0 14px;font-size:15px;font-family:inherit;width:100%}
+.field{display:flex;flex-direction:column;gap:6px}
+select{height:44px;border:1px solid #D1D5DB;border-radius:8px;padding:0 12px;font-size:14px;background:#fff;font-family:inherit}
+
+.pipeline{padding:10px 16px;display:flex;align-items:center;gap:14px}
+.step{flex:1;display:flex;gap:12px;align-items:center;min-width:0}
+.step .name{font-weight:600;font-size:14px}
+.link{width:40px;height:2px;background:#C7CBE0;flex:none}
+.link.done{background:#15803D}
+.spin{animation:spin 1s linear infinite;transform-origin:center}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+.work{flex:1;display:flex;gap:16px;min-height:0}
+.panel{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.tabs{display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid #E5E7EB;font-size:14px;font-weight:600}
+.tab{padding:10px 14px;color:#5B6475;background:none;border:0;border-bottom:2px solid transparent;font:inherit;cursor:pointer}
+.tab.on{color:#4338CA;border-bottom-color:#4338CA}
+.body{flex:1;min-height:0;padding:20px 32px;overflow:auto}
+.body img{display:block;max-width:100%;max-height:240px;margin:4px auto 14px;border-radius:8px;object-fit:cover}
+.body h2{margin:0 0 14px;font-family:'Source Serif 4',Georgia,serif;font-size:26px;line-height:1.25}
+.body h3{margin:20px 0 8px;font-size:16px}
+.body p{margin:0 0 12px;font-size:15px;line-height:1.7;color:#374151}
+.body ul{margin:0 0 12px;padding-left:20px;font-size:14px;line-height:1.7;color:#374151}
+.body .placeholder{color:#9CA3AF}
+.fact{display:flex;gap:10px;font-size:14px;line-height:1.5;margin-bottom:12px}
+.fact .src{margin-left:auto;color:#5B6475;font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
+pre.draft{white-space:pre-wrap;font:14px/1.6 Inter,Arial,sans-serif;color:#374151;margin:0}
+.foot{border-top:1px solid #E5E7EB;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
+aside.chunks{width:320px;flex:none;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0}
+
+.srcrow{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:14px}
+.srcrow span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.srcrow .mut{flex:none}
+.page{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto}
+@media (max-height:760px){#subtitle{display:none}.btn,.form input[type=text],select{min-height:38px;height:38px}}
+.saved{flex:1;display:flex;gap:16px;min-height:0}
+.plist{width:300px;flex:none;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+.pitem{text-align:left;border:1px solid #E5E7EB;border-radius:8px;background:#fff;padding:10px 12px;cursor:pointer;font:inherit}
+.pitem:hover{background:#F3F4F6}.pitem.on{border-color:#4338CA;background:#EEF2FF}
+.pitem b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pitem span{font-size:12px;color:#5B6475}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1B1F3B;color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:10}
+.err{color:#B91C1C;font-size:14px;margin-top:8px}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="side">
+  <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#6366F1"/><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <div style="color:#fff;font-weight:700;font-size:16px">Blog Post Factory</div>
+  </div>
+  <nav style="display:flex;flex-direction:column;gap:4px">
+    <a class="nav on" data-view="new" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New post</a>
+    <a class="nav" data-view="saved" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 10h16"/></svg>Saved posts</a>
+    <a class="nav" data-view="sources" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6c0-1 3-2 8-2s8 1 8 2-3 2-8 2-8-1-8-2zM4 6v12c0 1 3 2 8 2s8-1 8-2V6"/></svg>Sources library</a>
+    <a class="nav" data-view="settings" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</a>
+  </nav>
+  <div style="margin-top:auto;border-radius:10px;background:#2A2F57;padding:14px;color:#C7CBE0;font-size:13px;line-height:1.5"><div style="color:#fff;font-weight:600;margin-bottom:4px">Model</div><span id="modelName">Gemini free tier</span><br>Local embeddings + Chroma</div>
+</aside>
+
+<main>
+  <header style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+    <div><h1 id="title" style="margin:0;font-size:24px;font-weight:700">New blog post</h1><div id="subtitle" class="mut" style="margin-top:2px">Researcher, writer and editor agents work in sequence on your sources.</div></div>
+    <span id="status" class="pill" style="background:#E5E7EB;color:#374151">Idle</span>
+  </header>
+
+  <!-- NEW POST -->
+  <div id="view-new" class="page" style="flex:1;overflow:hidden">
+    <section class="card form">
+      <div class="field" style="flex:1">
+        <label class="lbl" for="topic">Topic</label>
+        <input id="topic" type="text" placeholder="e.g. The history of chess">
+      </div>
+      <div class="field" style="width:140px">
+        <label class="lbl" for="src">Sources folder</label>
+        <select id="src"><option>sources/</option></select>
+      </div>
+      <div class="field" style="width:150px">
+        <label class="lbl" for="words">Length (words)</label>
+        <select id="words">
+          <option value="200-400">200 – 400</option>
+          <option value="401-600" selected>401 – 600</option>
+          <option value="601-800">601 – 800</option>
+          <option value="801-1000">801 – 1000</option>
+          <option value="1001-1500">1001 – 1500</option>
+          <option value="1501-2000">1501 – 2000</option>
+          <option value="2001-2500">2001 – 2500</option>
+          <option value="2501-3000">2501 – 3000</option>
+          <option value="3001-4000">3001 – 4000</option>
+          <option value="4001-5000">4001 – 5000</option>
+        </select>
+      </div>
+      <div class="field" style="width:130px">
+        <label class="lbl" for="tone">Tone</label>
+        <select id="tone">
+          <option value="normal" selected>Normal</option><option value="exciting">Exciting</option>
+          <option value="happy">Happy</option><option value="sad">Sad</option>
+          <option value="factual">Factual</option><option value="funny">Funny</option>
+          <option value="inspirational">Inspirational</option><option value="professional">Professional</option>
+          <option value="casual">Casual</option><option value="dramatic">Dramatic</option>
+          <option value="serious">Serious</option><option value="curious">Curious</option>
+          <option value="nostalgic">Nostalgic</option><option value="persuasive">Persuasive</option>
+        </select>
+      </div>
+      <div class="field" style="width:130px">
+        <label class="lbl" for="images">Images</label>
+        <select id="images">
+          <option value="auto" selected>Where needed</option><option value="yes">Include</option><option value="no">None</option>
+        </select>
+      </div>
+      <button id="generate" class="btn pri" type="button" style="min-width:140px">Generate post</button>
+    </section>
+
+    <section class="card pipeline" aria-label="Agent pipeline">
+      <div class="step" data-stage="researcher"><span class="ico"></span><div><div class="name">Researcher</div><div class="mut sub">Waiting</div></div></div>
+      <div class="link"></div>
+      <div class="step" data-stage="writer"><span class="ico"></span><div><div class="name">Writer</div><div class="mut sub">Waiting</div></div></div>
+      <div class="link"></div>
+      <div class="step" data-stage="editor"><span class="ico"></span><div><div class="name">Editor</div><div class="mut sub">Waiting</div></div></div>
+    </section>
+    <div id="error" class="err hidden" role="alert"></div>
+
+    <div class="work">
+      <section class="card panel">
+        <div class="tabs" role="tablist">
+          <button class="tab" role="tab" data-tab="facts">Facts</button>
+          <button class="tab" role="tab" data-tab="draft">Draft</button>
+          <button class="tab on" role="tab" data-tab="final">Final post</button>
+        </div>
+        <article id="tabBody" class="body"></article>
+        <div class="foot">
+          <span id="saveHint" class="mut">Will be saved to output/</span>
+          <div style="display:flex;gap:8px"><button id="copy" class="btn" type="button" disabled>Copy Markdown</button><button id="save" class="btn pri" type="button" disabled>Save to file</button></div>
+        </div>
+      </section>
+      <aside class="card chunks">
+        <div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl">Retrieved from sources</span><span id="chunkCount" class="pill" style="background:#DCFCE7;color:#166534">0 facts</span></div>
+        <div id="chunkList"></div>
+      </aside>
+    </div>
+  </div>
+
+  <!-- SAVED POSTS -->
+  <div id="view-saved" class="page hidden" style="flex:1;overflow:hidden">
+    <div class="saved">
+      <aside class="card plist"><div class="lbl" style="padding:2px 2px 4px">Saved posts</div><div id="savedList" style="display:flex;flex-direction:column;gap:8px"></div></aside>
+      <section class="card panel">
+        <article id="savedBody" class="body"><p class="placeholder">Select a saved post to open it.</p></article>
+        <div class="foot"><span id="savedName" class="mut"></span>
+          <div style="display:flex;gap:8px"><button id="exPdf" class="btn" type="button" disabled>Export PDF</button><button id="exTxt" class="btn" type="button" disabled>Export TXT</button></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <!-- SOURCES LIBRARY -->
+  <div id="view-sources" class="page hidden">
+    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl">Sources folder</span><span id="srcCount" class="mut">0 files</span></div>
+      <div id="srcList" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="addFiles" class="btn" type="button">Add files</button>
+        <button id="ingest" class="btn" type="button">Re-run ingestion</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <input id="linkUrl" type="text" placeholder="Paste a web link (https://…) or a PDF link" style="flex:1;height:44px;border:1px solid #D1D5DB;border-radius:8px;padding:0 14px;font:inherit">
+        <button id="addLink" class="btn" type="button">Add link</button>
+        <input id="fileInput" type="file" accept=".txt,.md,.pdf" multiple class="hidden">
+      </div>
+    </section>
+  </div>
+
+  <!-- SETTINGS -->
+  <div id="view-settings" class="page hidden">
+    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:8px">
+      <div class="lbl">Configuration</div>
+      <div class="mut">Model: <strong id="setModel"></strong></div>
+      <div class="mut">Settings are read from <code>.env</code> / <code>blog_factory/config.py</code>.</div>
+    </section>
+  </div>
+</main>
+</div>
+<div id="toast" class="toast hidden" role="status"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+const state = { facts: "", draft: "", final: "", tab: "final", running: false, topic: "", saved: [] };
+
+const ICON = {
+  waiting: '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#fff" stroke="#C7CBE0" stroke-width="2"/></svg>',
+  running: '<svg class="spin" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#fff" stroke="#4338CA" stroke-width="3" stroke-dasharray="40 40"/></svg>',
+  done: '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#15803D"/><path d="M8 14.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  failed: '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#B91C1C"/><path d="M9 9l10 10M19 9L9 19" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>',
+};
+const STAGES = ["researcher", "writer", "editor"];
+const SUBTEXT = {
+  researcher: { waiting: "Waiting", running: "Searching the web", done: "Facts retrieved" },
+  writer: { waiting: "Waiting", running: "Drafting the post", done: "Draft complete" },
+  editor: { waiting: "Waiting", running: "Polishing language and title", done: "Final post ready" },
+};
+const STATUS = {
+  idle: ["Idle", "#E5E7EB", "#374151"], researcher: ["Researcher running", "#FEF3C7", "#92400E"],
+  writer: ["Writer running", "#FEF3C7", "#92400E"], editor: ["Editor running", "#FEF3C7", "#92400E"],
+  done: ["Done", "#DCFCE7", "#166534"], failed: ["Failed", "#FEE2E2", "#991B1B"], empty: ["No facts found", "#FEE2E2", "#991B1B"],
+};
+
+function esc(t) { return t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add("hidden"), 2800); }
+function setStatus(key) { const [txt, bg, fg] = STATUS[key]; const s = $("#status"); s.textContent = txt; s.style.background = bg; s.style.color = fg; }
+
+function setStep(stage, st) {
+  const el = $(`.step[data-stage="${stage}"]`);
+  $(".ico", el).innerHTML = ICON[st];
+  $(".sub", el).textContent = st === "failed" ? "Failed" : SUBTEXT[stage][st];
+  const idx = STAGES.indexOf(stage);
+  if (idx > 0) $$(".link")[idx - 1].classList.toggle("done", st !== "waiting");
+  if (idx < 2 && st === "done") $$(".link")[idx].classList.add("done");
+}
+function resetPipeline() { $$(".link").forEach(l => l.classList.remove("done")); STAGES.forEach(s => setStep(s, "waiting")); $$(".link").forEach(l => l.classList.remove("done")); }
+
+// --- parsing -------------------------------------------------------------
+function parseFacts(text) {
+  return text.split("\n").map(l => l.trim()).filter(l => /^[-*•]\s+/.test(l)).map(l => {
+    l = l.replace(/^[-*•]\s+/, "");
+    const m = l.match(/\[(https?:\/\/[^\]\s]+)\]\s*$/);
+    return { text: m ? l.slice(0, m.index).trim() : l, url: m ? m[1] : "" };
+  });
+}
+function host(u) { try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return u || "source"; } }
+function inline(t) { return esc(t).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>").replace(/\*(.+?)\*/g, "<em>$1</em>").replace(/\[(\d+)\]\((https?:\/\/[^)\s]+)\)|(https?:\/\/[^\s<)]+)/g, (m, n, cu, bare) =>
+    n ? `<sup><a href="${cu}" target="_blank" rel="noopener" title="${cu}">[${n}]</a></sup>` : `<a href="${bare}" target="_blank" rel="noopener">${bare}</a>`); }
+function md(text) {
+  const out = []; let list = [];
+  const flush = () => { if (list.length) { out.push("<ul>" + list.map(i => `<li>${inline(i)}</li>`).join("") + "</ul>"); list = []; } };
+  for (const raw of text.split("\n")) {
+    const l = raw.trim();
+    if (!l) { flush(); continue; }
+    let m;
+    if ((m = l.match(/^!\[([^\]]*)\]\((https?:\/\/[^)\s]+)\)$/))) { flush(); out.push(`<img src="${esc(m[2])}" alt="${esc(m[1])}" loading="lazy" onerror="this.remove()">`); }
+    else if ((m = l.match(/^#\s+(.*)/))) { flush(); out.push(`<h2>${inline(m[1])}</h2>`); }
+    else if ((m = l.match(/^#{2,}\s+(.*)/))) { flush(); out.push(`<h3>${inline(m[1])}</h3>`); }
+    else if ((m = l.match(/^(?:[-*]|\d+\.)\s+(.*)/))) list.push(m[1]);
+    else { flush(); out.push(`<p>${inline(l)}</p>`); }
+  }
+  flush(); return out.join("");
+}
+
+// --- rendering -----------------------------------------------------------
+function renderTab() {
+  $$(".tab").forEach(t => t.classList.toggle("on", t.dataset.tab === state.tab));
+  const body = $("#tabBody");
+  if (state.tab === "facts") {
+    const facts = parseFacts(state.facts);
+    body.innerHTML = facts.length ? facts.map(f => `<div class="fact"><span>•</span><span>${esc(f.text)}</span><span class="src" title="${esc(f.url)}">${esc(host(f.url))}</span></div>`).join("")
+      : `<p class="placeholder">Facts appear here once the researcher has finished.</p>`;
+  } else if (state.tab === "draft") {
+    body.innerHTML = state.draft ? md(state.draft) : `<p class="placeholder">The writer's draft appears here.</p>`;
+  } else {
+    body.innerHTML = state.final ? md(state.final) : `<p class="placeholder">The final post appears here once the editor has finished.</p>`;
+  }
+}
+function renderChunks() {
+  const facts = parseFacts(state.facts);
+  $("#chunkCount").textContent = `${facts.length} fact${facts.length === 1 ? "" : "s"}`;
+  $("#chunkList").style.cssText = "display:flex;flex-direction:column;gap:12px";
+  $("#chunkList").innerHTML = facts.map(f => `<div class="chunk"><span class="pill" title="${esc(f.url)}">${esc(host(f.url))}</span><br>${esc(f.text)}</div>`).join("")
+    || `<div class="mut">Nothing retrieved yet.</div>`;
+}
+function render() { renderTab(); renderChunks(); }
+
+// --- generate ------------------------------------------------------------
+function showError(msg) { const e = $("#error"); e.textContent = msg || ""; e.classList.toggle("hidden", !msg); }
+function lockUI(on) { state.running = on; $("#generate").disabled = on; $("#topic").disabled = $("#words").disabled = $("#tone").disabled = $("#images").disabled = on; $("#generate").textContent = on ? "Generating…" : "Generate post"; }
+
+async function generate() {
+  const topic = $("#topic").value.trim();
+  if (!topic) { showError("Enter a topic first."); $("#topic").focus(); return; }
+  showError("");
+  Object.assign(state, { facts: "", draft: "", final: "", topic, tab: "facts" });
+  $("#copy").disabled = $("#save").disabled = true;
+  resetPipeline(); render(); lockUI(true); setStatus("idle");
+  let current = null, finished = false;
+
+  const begin = stage => {
+    if (current && current !== stage) setStep(current, "done");
+    current = stage; setStep(stage, "running"); setStatus(stage);
+    state.tab = stage === "researcher" ? "facts" : stage === "writer" ? "draft" : "final"; renderTab();
+  };
+
+  try {
+    const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, words_min: +$("#words").value.split("-")[0], words_max: +$("#words").value.split("-")[1], tone: $("#tone").value, images: $("#images").value }) });
+    if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `Server error ${res.status}`);
+    const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "";
+    for (;;) {
+      const { value, done } = await reader.read(); if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf("\n\n")) >= 0) {
+        const line = buf.slice(0, i).trim(); buf = buf.slice(i + 2);
+        if (!line.startsWith("data:")) continue;
+        const ev = JSON.parse(line.slice(5));
+        if (ev.type === "stage") begin(ev.stage);
+        else if (ev.type === "chunk") {
+          const key = ev.stage === "researcher" ? "facts" : ev.stage === "writer" ? "draft" : "final";
+          state[key] += ev.text; renderTab(); if (key === "facts") renderChunks();
+        } else if (ev.type === "done") {
+          finished = true; state.final = ev.post; STAGES.forEach(s => setStep(s, "done")); setStatus("done");
+          state.tab = "final"; render(); $("#copy").disabled = $("#save").disabled = false;
+        } else if (ev.type === "empty") {
+          finished = true; if (current) setStep(current, "failed"); setStatus("empty");
+          showError("The web search found nothing relevant for this topic.");
+        } else if (ev.type === "note") { const s = $('.step[data-stage="editor"] .sub'); if (s) s.textContent = ev.text; if (ev.text.startsWith("Warning")) { toast(ev.text); showError(ev.text); } }
+        else if (ev.type === "error") { throw new Error(ev.message); }
+      }
+    }
+    if (!finished) throw new Error("The connection closed before the post was finished.");
+  } catch (e) {
+    if (current) setStep(current, "failed"); setStatus("failed"); showError(e.message);
+  } finally { lockUI(false); }
+}
+
+// --- actions -------------------------------------------------------------
+async function copyMd() {
+  try { await navigator.clipboard.writeText(state.final); toast("Markdown copied"); }
+  catch { toast("Copy failed — select the text manually"); }
+}
+async function savePost() {
+  $("#save").disabled = true;
+  try {
+    const r = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post: state.final, topic: state.topic }) });
+    if (!r.ok) throw new Error("Save failed");
+    const { path } = await r.json();
+    $("#saveHint").textContent = `Saved to ${path}`; toast("Saved");
+  } catch (e) { toast(e.message); }
+  $("#save").disabled = false;
+}
+let openPost = null;
+async function loadSaved(select) {
+  try {
+    const { posts } = await (await fetch("/api/posts")).json();
+    $("#savedList").innerHTML = posts.length
+      ? posts.map(p => `<button type="button" class="pitem${p.name === select ? " on" : ""}" data-name="${esc(p.name)}"><b>${esc(p.title)}</b><span>${new Date(p.modified * 1000).toLocaleString()}</span></button>`).join("")
+      : '<div class="mut">Nothing saved yet. Generate a post and press “Save to file”.</div>';
+    $$(".pitem").forEach(b => b.addEventListener("click", () => openSaved(b.dataset.name)));
+  } catch { toast("Could not load saved posts"); }
+}
+async function openSaved(name) {
+  try {
+    const r = await fetch("/api/posts/" + encodeURIComponent(name));
+    if (!r.ok) throw new Error();
+    const d = await r.json();
+    openPost = d;
+    $("#savedBody").innerHTML = md(d.content);
+    $("#savedName").textContent = d.name;
+    $("#exPdf").disabled = $("#exTxt").disabled = false;
+    $$(".pitem").forEach(b => b.classList.toggle("on", b.dataset.name === name));
+  } catch { toast("Could not open the post"); }
+}
+function toPlain(m) {
+  const NL = String.fromCharCode(10);
+  return m.split(NL).filter(l => !/^!\[/.test(l.trim()))
+    .map(l => l.replace(/^#{1,6}\s+/, "").replace(/\*\*(.+?)\*\*/g, "$1").replace(/\*(.+?)\*/g, "$1").replace(/^[-*]\s+/, "- "))
+    .join(NL).replace(new RegExp(NL + "{3,}", "g"), NL + NL).trim() + NL;
+}
+function exportTxt() {
+  if (!openPost) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([toPlain(openPost.content)], { type: "text/plain;charset=utf-8" }));
+  a.download = openPost.name.replace(/\.md$/, ".txt"); a.click(); URL.revokeObjectURL(a.href);
+}
+async function exportPdf() {
+  if (!openPost) return;
+  const b = $("#exPdf"); b.disabled = true; b.textContent = "Preparing…";
+  try {
+    const r = await fetch("/api/posts/" + encodeURIComponent(openPost.name) + "/pdf");
+    if (!r.ok) throw new Error();
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(await r.blob());
+    a.download = openPost.name.replace(/\.md$/, ".pdf"); a.click(); URL.revokeObjectURL(a.href);
+  } catch { toast("PDF export failed"); }
+  b.disabled = false; b.textContent = "Export PDF";
+}
+
+// --- sources -------------------------------------------------------------
+function renderSources(d) {
+  $("#srcCount").textContent = `${d.files.length} file${d.files.length === 1 ? "" : "s"}`;
+  $("#srcList").innerHTML = d.files.map(f => `<div class="srcrow"><span>${esc(f.name)}</span><span class="mut">${f.chunks} chunks</span></div>`).join("") || '<div class="mut">No files yet.</div>';
+  $("#src").innerHTML = `<option>${esc(d.folder)}/ (${d.files.length} file${d.files.length === 1 ? "" : "s"})</option>`;
+}
+async function loadConfig() {
+  try {
+    const d = await (await fetch("/api/config")).json();
+    renderSources(d); $("#modelName").textContent = d.model; $("#setModel").textContent = d.model;
+  } catch { toast("Could not reach the server"); }
+}
+async function addFiles(files) {
+  toast("Reading files…");
+  const payload = await Promise.all([...files].map(async f => {
+    if (!/\.pdf$/i.test(f.name)) return { name: f.name, content: await f.text() };
+    const bytes = new Uint8Array(await f.arrayBuffer());
+    let bin = "";
+    for (let i = 0; i < bytes.length; i += 32768) bin += String.fromCharCode(...bytes.subarray(i, i + 32768));
+    return { name: f.name, content: btoa(bin), encoding: "base64" };
+  }));
+  const r = await fetch("/api/sources", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ files: payload }) });
+  if (!r.ok) { toast((await r.json().catch(() => ({}))).detail || "Upload failed"); return; }
+  renderSources(await r.json()); toast(`${payload.length} file(s) added — re-run ingestion to index them`);
+}
+async function addLink() {
+  const url = $("#linkUrl").value.trim();
+  if (!url) return;
+  const b = $("#addLink"); b.disabled = true; b.textContent = "Fetching…";
+  try {
+    const r = await fetch("/api/sources/link", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ url }) });
+    if (!r.ok) throw new Error((await r.json().catch(() => ({}))).detail || "Could not add link");
+    renderSources(await r.json()); $("#linkUrl").value = ""; toast("Link added — re-run ingestion to index it");
+  } catch (e) { toast(e.message); }
+  b.disabled = false; b.textContent = "Add link";
+}
+async function ingest() {
+  const b = $("#ingest"); b.disabled = true; b.textContent = "Ingesting…";
+  try {
+    const r = await fetch("/api/ingest", { method: "POST" });
+    if (!r.ok) throw new Error("Ingestion failed");
+    const d = await r.json(); renderSources(d); toast(`Ingested ${d.chunks} chunks`);
+  } catch (e) { toast(e.message); }
+  b.disabled = false; b.textContent = "Re-run ingestion";
+}
+
+// --- navigation ----------------------------------------------------------
+const TITLES = {
+  new: ["New blog post", "Researcher, writer and editor agents work in sequence on your sources."],
+  saved: ["Saved posts", "Posts you saved during this session."],
+  sources: ["Sources library", "Reference files used by the agents."],
+  settings: ["Settings", "Current configuration."],
+};
+function show(view) {
+  $$(".nav").forEach(n => n.classList.toggle("on", n.dataset.view === view));
+  ["new", "saved", "sources", "settings"].forEach(v => $("#view-" + v).classList.toggle("hidden", v !== view));
+  $("#title").textContent = TITLES[view][0]; $("#subtitle").textContent = TITLES[view][1];
+  $("#status").classList.toggle("hidden", view !== "new");
+  if (view === "saved") loadSaved(openPost && openPost.name);
+}
+$$(".nav").forEach(n => { n.addEventListener("click", () => show(n.dataset.view)); n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(n.dataset.view); } }); });
+$$(".tab").forEach(t => t.addEventListener("click", () => { state.tab = t.dataset.tab; renderTab(); }));
+$("#generate").addEventListener("click", generate);
+$("#topic").addEventListener("keydown", e => { if (e.key === "Enter" && !state.running) generate(); });
+$("#copy").addEventListener("click", copyMd);
+$("#exPdf").addEventListener("click", exportPdf);
+$("#exTxt").addEventListener("click", exportTxt);
+$("#save").addEventListener("click", savePost);
+$("#addFiles").addEventListener("click", () => $("#fileInput").click());
+$("#fileInput").addEventListener("change", e => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ""; });
+$("#ingest").addEventListener("click", ingest);
+$("#addLink").addEventListener("click", addLink);
+$("#linkUrl").addEventListener("keydown", e => { if (e.key === "Enter") addLink(); });
+
+resetPipeline(); render(); loadConfig();
+</script>
+</body>
+</html>
