@@ -126,9 +126,15 @@ def _blob_list() -> list[dict]:
 def _require_writable_local() -> None:
     # Vercel's filesystem is read-only, so fail with a clear message instead of an OSError.
     if os.getenv("VERCEL"):
+        seen = sorted(
+            f"{k}{'' if v.strip() else ' (EMPTY)'}"
+            for k, v in os.environ.items()
+            if "BLOB" in k.upper() or "OIDC" in k.upper()
+        )
         raise RuntimeError(
-            "Storage is not configured: link a Blob store to this Vercel project, or set "
-            "BLOB_READ_WRITE_TOKEN and BLOB_STORE_ID_STORE_ID in its environment variables."
+            "Storage is not configured: neither BLOB_READ_WRITE_TOKEN nor VERCEL_OIDC_TOKEN is "
+            f"set in this deployment (env: {os.getenv('VERCEL_ENV')}). "
+            f"Blob-related variables visible here: {seen or 'none'}."
         )
 
 
