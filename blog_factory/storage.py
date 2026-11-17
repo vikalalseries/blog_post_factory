@@ -114,7 +114,7 @@ def _blob_list() -> list[dict]:
     return [
         {
             "name": b.pathname[len(PREFIX):],
-            "title": b.pathname[len(PREFIX):-3].replace("_", " ").title(),
+            "title": re.sub(r"_\d{8}-\d{6}$", "", b.pathname[len(PREFIX):-3]).replace("_", " ").title(),
             "modified": b.uploaded_at.timestamp(),
         }
         for b in blobs

@@ -106,8 +106,8 @@ async def run_factory(
     topic: str,
     verbose: bool = True,
     on_event: Callable[[str, str, str], None] | None = None,
-    words_min: int = 400,
-    words_max: int = 600,
+    words_min: int = 200,
+    words_max: int = 400,
     tone: str = "normal",
     images: str = "auto",
 ) -> FactoryResult:
