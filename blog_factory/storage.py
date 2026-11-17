@@ -26,8 +26,14 @@ class PostNotFound(Exception):
     pass
 
 
+def _token() -> str | None:
+    # On Vercel a linked Blob store provides the store id and a per-deployment OIDC token
+    # (VERCEL_OIDC_TOKEN); locally you use BLOB_READ_WRITE_TOKEN from .env.
+    return os.getenv("BLOB_READ_WRITE_TOKEN") or os.getenv("VERCEL_OIDC_TOKEN")
+
+
 def use_blob() -> bool:
-    return bool(os.getenv("BLOB_READ_WRITE_TOKEN"))
+    return bool(_token())
 
 
 def safe_name(name: str) -> str:
@@ -52,7 +58,7 @@ def _credentials():
     from vercel import blob
 
     return blob.BlobCredentials(
-        token=os.environ["BLOB_READ_WRITE_TOKEN"],
+        token=_token() or "",
         store_id=os.environ["BLOB_STORE_ID_STORE_ID"],
         kind=blob.CredentialKind.OIDC,
     )
@@ -121,8 +127,8 @@ def _require_writable_local() -> None:
     # Vercel's filesystem is read-only, so fail with a clear message instead of an OSError.
     if os.getenv("VERCEL"):
         raise RuntimeError(
-            "Storage is not configured: set BLOB_READ_WRITE_TOKEN (and BLOB_STORE_ID_STORE_ID) "
-            "in the Vercel project's environment variables."
+            "Storage is not configured: link a Blob store to this Vercel project, or set "
+            "BLOB_READ_WRITE_TOKEN and BLOB_STORE_ID_STORE_ID in its environment variables."
         )
 
 
