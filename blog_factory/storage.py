@@ -1,15 +1,25 @@
-"""Where saved posts live: Vercel Blob when BLOB_READ_WRITE_TOKEN is set, else the local output/ folder."""
+"""Where saved posts live.
+
+Deployed (Vercel): Vercel Blob, selected when BLOB_READ_WRITE_TOKEN is set.
+Local development: the output/ folder, when no blob token is set.
+
+Blob settings (environment variables):
+    BLOB_READ_WRITE_TOKEN     token for the store (enables Blob storage)
+    BLOB_STORE_ID_STORE_ID    id of the store (used with the token, as in tests/test_storage.py)
+    BLOB_ACCESS               "public" (default) or "private"
+"""
 
 from __future__ import annotations
 
 import os
 import re
+from contextlib import contextmanager
 from pathlib import Path
+from typing import Iterator
 
 from blog_factory import config
 
 PREFIX = "posts/"
-_access: str | None = None  # "private" or "public", detected from the store on first use
 
 
 class PostNotFound(Exception):
@@ -33,42 +43,94 @@ def _title(text: str, fallback: str) -> str:
 
 # --- Vercel Blob -----------------------------------------------------------------
 
+def _access() -> str:
+    access = os.getenv("BLOB_ACCESS", "public").strip().lower()
+    return access if access in ("public", "private") else "public"
+
+
+def _credentials():
+    from vercel import blob
+
+    return blob.BlobCredentials(
+        token=os.environ["BLOB_READ_WRITE_TOKEN"],
+        store_id=os.environ["BLOB_STORE_ID_STORE_ID"],
+        kind=blob.CredentialKind.OIDC,
+    )
+
+
+@contextmanager
+def _blob_session() -> Iterator[None]:
+    """Run blob calls with the explicit store credentials when a store id is configured."""
+    if not os.getenv("BLOB_STORE_ID_STORE_ID"):
+        yield  # let the SDK work out the store from the token alone
+        return
+
+    from vercel.api import session
+    from vercel.blob.sync import SyncBlobServiceOptions
+
+    options = SyncBlobServiceOptions(credentials_factory=_credentials)
+    with session(service_options=[options]):
+        yield
+
+
 def _blob_put(name: str, content: str) -> str:
-    global _access
     from vercel.blob.sync import put_blob
 
-    data = content.encode("utf-8")
-    kwargs = dict(content_type="text/markdown; charset=utf-8", allow_overwrite=True)
-    for access in ([_access] if _access else ["private", "public"]):
-        try:
-            result = put_blob(PREFIX + name, data, access=access, **kwargs)
-            _access = access
-            return result.url
-        except Exception:
-            if access == "public" or _access:
-                raise
-    raise RuntimeError("Could not write to Vercel Blob")
+    with _blob_session():
+        result = put_blob(
+            PREFIX + name,
+            content.encode("utf-8"),
+            access=_access(),
+            content_type="text/markdown; charset=utf-8",
+            allow_overwrite=True,
+        )
+    return result.url
 
 
 def _blob_get(name: str) -> str:
+    from vercel.blob import BlobNotFoundError
     from vercel.blob.sync import get_blob
 
-    last: Exception | None = None
-    for access in ([_access] if _access else ["private", "public"]):
-        try:
-            return bytes(get_blob(PREFIX + name, access=access).body).decode("utf-8")
-        except Exception as exc:
-            last = exc
-    raise PostNotFound(name) from last
+    try:
+        with _blob_session():
+            return bytes(get_blob(PREFIX + name, access=_access()).body).decode("utf-8")
+    except BlobNotFoundError as exc:
+        raise PostNotFound(name) from exc
+
+
+def _blob_list() -> list[dict]:
+    from vercel.blob.sync import query_blobs
+
+    with _blob_session():
+        blobs = [b for b in query_blobs(prefix=PREFIX) if b.pathname.endswith(".md")]
+    blobs.sort(key=lambda b: b.uploaded_at, reverse=True)
+    # Titles come from the file name here; opening a post shows the real title.
+    return [
+        {
+            "name": b.pathname[len(PREFIX):],
+            "title": b.pathname[len(PREFIX):-3].replace("_", " ").title(),
+            "modified": b.uploaded_at.timestamp(),
+        }
+        for b in blobs
+    ]
 
 
 # --- public API ------------------------------------------------------------------
 
+def _require_writable_local() -> None:
+    # Vercel's filesystem is read-only, so fail with a clear message instead of an OSError.
+    if os.getenv("VERCEL"):
+        raise RuntimeError(
+            "Storage is not configured: set BLOB_READ_WRITE_TOKEN (and BLOB_STORE_ID_STORE_ID) "
+            "in the Vercel project's environment variables."
+        )
+
+
 def save(name: str, content: str) -> str:
     name = safe_name(name)
     if use_blob():
-        _blob_put(name, content)
-        return f"Vercel Blob: {PREFIX}{name}"
+        return _blob_put(name, content)
+    _require_writable_local()
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     path = config.OUTPUT_DIR / name
     path.write_text(content + "\n", encoding="utf-8")
@@ -86,18 +148,9 @@ def read(name: str) -> str:
 
 
 def list_posts() -> list[dict]:
-    posts: list[dict] = []
     if use_blob():
-        from vercel.blob.sync import query_blobs
-
-        blobs = [b for b in query_blobs(prefix=PREFIX) if b.pathname.endswith(".md")]
-        blobs.sort(key=lambda b: b.uploaded_at, reverse=True)
-        for b in blobs:
-            name = b.pathname[len(PREFIX):]
-            # Titles come from the file name here; opening a post shows the real title.
-            posts.append({"name": name, "title": name[:-3].replace("_", " ").title(),
-                          "modified": b.uploaded_at.timestamp()})
-        return posts
+        return _blob_list()
+    posts: list[dict] = []
     if config.OUTPUT_DIR.is_dir():
         for path in sorted(config.OUTPUT_DIR.glob("*.md"), key=lambda p: p.stat().st_mtime, reverse=True):
             text = path.read_text(encoding="utf-8", errors="ignore")
