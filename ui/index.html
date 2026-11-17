@@ -165,7 +165,7 @@ aside.chunks{width:320px;flex:none;padding:16px;display:flex;flex-direction:colu
         </div>
         <article id="tabBody" class="body"></article>
         <div class="foot">
-          <span id="saveHint" class="mut">Will be saved to output/</span>
+          <span id="saveHint" class="mut"></span>
           <div style="display:flex;gap:8px"><button id="copy" class="btn" type="button" disabled>Copy Markdown</button><button id="save" class="btn pri" type="button" disabled>Save to file</button></div>
         </div>
       </section>
@@ -366,8 +366,7 @@ async function savePost() {
   try {
     const r = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post: state.final, topic: state.topic }) });
     if (!r.ok) throw new Error("Save failed");
-    const { path } = await r.json();
-    $("#saveHint").textContent = `Saved to ${path}`; toast("Saved");
+    $("#saveHint").textContent = "Post saved successfully"; toast("Post saved successfully");
   } catch (e) { toast(e.message); }
   $("#save").disabled = false;
 }

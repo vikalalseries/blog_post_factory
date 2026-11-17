@@ -10,6 +10,7 @@ from __future__ import annotations
 import asyncio
 import base64
 import json
+from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
@@ -226,6 +227,9 @@ def export_pdf(name: str) -> Response:
 @app.post("/api/save")
 def save(req: SaveRequest) -> dict:
     try:
-        return {"path": storage.save(slugify(req.topic) + ".md", req.post)}
+        # A timestamp in the name keeps every save as its own post instead of overwriting.
+        stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
+        storage.save(f"{slugify(req.topic)}_{stamp}.md", req.post)
+        return {"message": "Post saved successfully"}
     except Exception as exc:
         raise HTTPException(500, f"Save failed: {exc}")
