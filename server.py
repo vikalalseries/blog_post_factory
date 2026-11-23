@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request, WebSocket
 from fastapi.responses import FileResponse, Response, StreamingResponse
 from pydantic import BaseModel, Field
 
@@ -75,6 +75,44 @@ def _list_sources() -> dict:
 @app.get("/api/config")
 def get_config() -> dict:
     return {"model": config.GEMINI_MODEL, **_list_sources()}
+
+
+@app.websocket("/api/listen")
+async def listen(ws: WebSocket) -> None:
+    """Live speech to text: browser streams audio in, Deepgram words stream back."""
+    from blog_factory.speech import live_transcribe
+
+    await ws.accept()
+    try:
+        await live_transcribe(ws, ws.query_params.get("language"))
+    except Exception as exc:  # report instead of dropping the socket silently
+        try:
+            await ws.send_json({"error": f"Speech-to-text failed: {exc}"})
+        except Exception:
+            pass
+    finally:
+        try:
+            await ws.close()
+        except Exception:
+            pass
+
+
+@app.post("/api/transcribe")
+async def transcribe(request: Request) -> dict:
+    """Speech to text: the browser posts the raw recorded audio, Deepgram returns the words."""
+    from blog_factory.speech import transcribe_audio
+
+    audio = await request.body()
+    if not audio:
+        raise HTTPException(400, "No audio received.")
+    if len(audio) > 25 * 1024 * 1024:
+        raise HTTPException(413, "Recording is too large.")
+    try:
+        return {"text": await transcribe_audio(audio, request.query_params.get("language"))}
+    except RuntimeError as exc:
+        raise HTTPException(500, str(exc))
+    except Exception as exc:
+        raise HTTPException(502, f"Speech-to-text failed: {exc}")
 
 
 @app.get("/api/sources")
