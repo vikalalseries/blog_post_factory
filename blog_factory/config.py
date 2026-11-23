@@ -30,6 +30,9 @@ WEB_RESULTS: int = int(os.getenv("WEB_RESULTS", "5"))
 # Hard cap on SerpAPI searches per blog post (free tier has a small monthly quota).
 MAX_SEARCHES: int = int(os.getenv("MAX_SEARCHES", "3"))
 
+# --- Speech to text (Deepgram) ------------------------------------------------------
+DEEPGRAM_API_KEY: str | None = os.getenv("DEEPGRAM_API_KEY") or os.getenv("text_to_speech")
+
 # --- RAG ----------------------------------------------------------------------
 SOURCES_DIR: Path = PROJECT_ROOT / os.getenv("SOURCES_DIR", "sources")
 # Pre-built vector index (JSON). Committed so read-only serverless hosts can use it.
