@@ -62,37 +62,58 @@ class ReplyToUserTurn(Executor):
         await ctx.send_message([Message(role="user", contents=[text])])
 
 
+def _numbered_text(facts: str) -> str:
+    """Facts with [url] tags turned into [1], [2]... plus a SOURCES table (what the writer reads)."""
+    numbered, urls = number_sources(facts.strip() or EMPTY_HANDOFF)
+    table = "\n".join(f"[{i}] {u}" for i, u in enumerate(urls, 1))
+    return f"{numbered}\n\nSOURCES:\n{table}" if urls else numbered
+
+
 class NumberSources(Executor):
     """Give the writer the researcher's facts with numbered sources ([1], [2], ...)."""
 
     @handler
     async def forward(self, prior: AgentExecutorResponse, ctx: WorkflowContext[list[Message]]) -> None:
-        numbered, urls = number_sources(prior.agent_response.text.strip() or EMPTY_HANDOFF)
-        table = "\n".join(f"[{i}] {u}" for i, u in enumerate(urls, 1))
-        text = f"{numbered}\n\nSOURCES:\n{table}" if urls else numbered
+        text = _numbered_text(prior.agent_response.text)
         await ctx.send_message([Message(role="user", contents=[text])])
 
 
+class CachedFacts(Executor):
+    """Stands in for researcher + NumberSources when the topic was already researched.
+
+    No web search and no research LLM call: the earlier facts go straight to the writer.
+    """
+
+    def __init__(self, facts: str, id: str = "cached_facts") -> None:
+        super().__init__(id=id)
+        self._facts = facts
+
+    @handler
+    async def start(self, _input: list[Message], ctx: WorkflowContext[list[Message]]) -> None:
+        await ctx.send_message([Message(role="user", contents=[_numbered_text(self._facts)])])
+
+
 def build_workflow(
-    words_min: int = 400, words_max: int = 600, tone: str = "normal", images: str = "auto"
+    words_min: int = 400, words_max: int = 600, tone: str = "normal", images: str = "auto",
+    facts: str | None = None,
 ) -> Workflow:
     researcher, writer, editor = build_agents(
         words_min=words_min, words_max=words_max, tone=tone, images=images
     )
+    # Each agent sees only the previous agent's reply: the writer gets the
+    # facts (not raw passages), and the editor gets only the draft.
+    if facts:  # topic already researched: skip the researcher entirely (saves search + LLM calls)
+        head = [CachedFacts(facts)]
+        surface = [writer]
+    else:
+        head = [researcher, NumberSources(id="to_writer")]
+        surface = [researcher, writer]
     return SequentialBuilder(
         name="blog_post_factory",
-        # Each agent sees only the previous agent's reply: the writer gets the
-        # facts (not raw passages), and the editor gets only the draft.
-        participants=[
-            researcher,
-            NumberSources(id="to_writer"),
-            writer,
-            ReplyToUserTurn(id="to_editor"),
-            editor,
-        ],
+        participants=[*head, writer, ReplyToUserTurn(id="to_editor"), editor],
         # Surface every agent's reply (not just the editor's), so each stage
         # can be streamed to the terminal as it runs.
-        intermediate_output_from=[researcher, writer],
+        intermediate_output_from=surface,
     ).build()
 
 
@@ -110,11 +131,25 @@ async def run_factory(
     words_max: int = 400,
     tone: str = "normal",
     images: str = "auto",
+    facts: str | None = None,
 ) -> FactoryResult:
+    """`facts`: research from an earlier run on the same topic. When given, the researcher
+    (web search + research LLM call) is skipped and only writer + editor run."""
     reset_search_count()
-    workflow = build_workflow(words_min, words_max, tone, images)
+    facts = (facts or "").strip() or None
+    if facts and facts.startswith("NO_FACTS_FOUND"):
+        facts = None
+    workflow = build_workflow(words_min, words_max, tone, images, facts)
     stages: dict[str, str] = {}
     current_stage = ""
+    if facts:
+        stages["researcher"] = facts
+        if on_event:
+            on_event("stage", "researcher", "")
+            on_event("chunk", "researcher", facts)
+            on_event("note", "editor", "Reusing earlier research: web search skipped")
+        if verbose:
+            print("\n>>> Reusing earlier research (researcher skipped)\n", flush=True)
 
     async for event in workflow.run(topic, stream=True):
         if event.type == "executor_invoked" and event.executor_id in STAGE_LABELS:

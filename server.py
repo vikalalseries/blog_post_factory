@@ -14,8 +14,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Literal
 
-from fastapi import FastAPI, HTTPException, Request, WebSocket
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse, Response, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from blog_factory import config
@@ -24,9 +25,12 @@ from blog_factory import storage
 from main import slugify
 
 UI_FILE = Path(__file__).parent / "ui" / "index.html"
+STATIC_DIR = Path(__file__).parent / "static"
 SUPPORTED_SUFFIXES = {".txt", ".md"}
 
 app = FastAPI(title="Blog Post Factory")
+# Mounted before the other routes so /static/... is always served as files.
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 class GenerateRequest(BaseModel):
@@ -35,6 +39,8 @@ class GenerateRequest(BaseModel):
     words_max: int = Field(600, ge=200, le=5000)
     tone: Literal["normal", "exciting", "happy", "sad", "factual", "funny", "inspirational", "professional", "casual", "dramatic", "serious", "curious", "nostalgic", "persuasive"] = "normal"
     images: Literal["auto", "yes", "no"] = "auto"
+    # Research from an earlier run on the same topic; when sent, the researcher is skipped.
+    facts: str | None = Field(None, max_length=30_000)
 
 
 class SaveRequest(BaseModel):
@@ -77,42 +83,40 @@ def get_config() -> dict:
     return {"model": config.GEMINI_MODEL, **_list_sources()}
 
 
-@app.websocket("/api/listen")
-async def listen(ws: WebSocket) -> None:
-    """Live speech to text: browser streams audio in, Deepgram words stream back."""
-    from blog_factory.speech import live_transcribe
-
-    await ws.accept()
-    try:
-        await live_transcribe(ws, ws.query_params.get("language"))
-    except Exception as exc:  # report instead of dropping the socket silently
-        try:
-            await ws.send_json({"error": f"Speech-to-text failed: {exc}"})
-        except Exception:
-            pass
-    finally:
-        try:
-            await ws.close()
-        except Exception:
-            pass
+MAX_AUDIO_BYTES = 3_000_000   # one short recording (a few seconds of webm/opus is ~20-60 KB)
+MIN_AUDIO_BYTES = 1_000       # smaller than this is silence / an empty recording
 
 
 @app.post("/api/transcribe")
 async def transcribe(request: Request) -> dict:
-    """Speech to text: the browser posts the raw recorded audio, Deepgram returns the words."""
-    from blog_factory.speech import transcribe_audio
+    """Voice typing, short-piece mode: raw audio body in, {"text"} out (Vercel-friendly, stateless)."""
+    from blog_factory.speech import SpeechFailed, SpeechUnavailable, transcribe as dg_transcribe
 
     audio = await request.body()
-    if not audio:
-        raise HTTPException(400, "No audio received.")
-    if len(audio) > 25 * 1024 * 1024:
+    if len(audio) < MIN_AUDIO_BYTES:
+        return {"text": ""}
+    if len(audio) > MAX_AUDIO_BYTES:
         raise HTTPException(413, "Recording is too large.")
     try:
-        return {"text": await transcribe_audio(audio, request.query_params.get("language"))}
-    except RuntimeError as exc:
-        raise HTTPException(500, str(exc))
-    except Exception as exc:
-        raise HTTPException(502, f"Speech-to-text failed: {exc}")
+        return {"text": await dg_transcribe(audio, request.headers.get("content-type") or "audio/webm")}
+    except SpeechUnavailable as exc:
+        raise HTTPException(503, str(exc))
+    except SpeechFailed as exc:
+        raise HTTPException(502, str(exc))
+
+
+@app.post("/api/voice-token")
+async def voice_token() -> dict:
+    """Voice typing, live mode: a 60 s temporary token so the browser can stream to Deepgram
+    directly. The real API key never leaves the server."""
+    from blog_factory.speech import SpeechFailed, SpeechUnavailable, voice_token as dg_token
+
+    try:
+        return {"token": await dg_token(60)}
+    except SpeechUnavailable as exc:
+        raise HTTPException(503, str(exc))
+    except SpeechFailed as exc:  # e.g. the key's role cannot create tokens -> browser falls back to /api/transcribe
+        raise HTTPException(502, str(exc))
 
 
 @app.get("/api/sources")
@@ -161,6 +165,18 @@ def run_ingest() -> dict:
     return {"chunks": total, **_list_sources()}
 
 
+class ClassifyRequest(BaseModel):
+    text: str
+
+
+@app.post("/api/classify")
+async def classify(req: ClassifyRequest) -> dict:
+    """Intent detector: topic -> write a post, chat -> suggest topics, off_topic -> reject."""
+    from blog_factory.intent import classify_intent
+
+    return (await classify_intent(req.text)).model_dump()
+
+
 @app.post("/api/generate")
 async def generate(req: GenerateRequest) -> StreamingResponse:
     topic = req.topic.strip()
@@ -178,7 +194,7 @@ async def generate(req: GenerateRequest) -> StreamingResponse:
         try:
             result = await run_factory(topic, verbose=False, on_event=on_event,
                                       words_min=req.words_min, words_max=req.words_max,
-                                      tone=req.tone, images=req.images)
+                                      tone=req.tone, images=req.images, facts=req.facts)
             final = result.final_post
             if not final or final.startswith("NO_FACTS_FOUND"):
                 queue.put_nowait({"type": "empty"})

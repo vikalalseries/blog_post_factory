@@ -216,6 +216,7 @@ main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 </style>
 </head>
 <body>
+<canvas id="dots" aria-hidden="true" style="position:fixed;top:0;left:0;width:100vw;height:100vh;pointer-events:none;z-index:-1"></canvas>
 <div class="app">
 <div class="scrim" id="scrim"></div>
 <aside class="side" id="side" aria-label="Sidebar">
@@ -305,6 +306,7 @@ main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
 </div>
 <div id="toast" class="toast hidden" role="status"></div>
 
+<script src="/static/deepgram_mic.js"></script>
 <script>
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
@@ -321,7 +323,7 @@ try { Object.assign(opts, JSON.parse(localStorage.getItem("pf.opts2") || "{}"));
 // ---------- state ----------
 let chats = [];
 try { chats = JSON.parse(localStorage.getItem("pf.chats") || "[]"); } catch {}
-chats.forEach(c => { if (c.status === "running") { c.status = "failed"; c.error = c.error || "Interrupted — the page was reloaded while generating."; } });
+chats.forEach(c => { if (c.status === "running" || c.status === "checking") { c.status = "failed"; c.error = c.error || "Interrupted — the page was reloaded while generating."; } });
 let cur = null;        // current chat id (null = new chat screen)
 let agent = "editor";  // selected agent view
 let view = "chat";
@@ -410,6 +412,7 @@ function agentCard(c) {
   if (agent === "researcher") {
     const f = parseFacts(text);
     head = `Research · ${f.length} fact${f.length === 1 ? "" : "s"} from ${new Set(f.map(x => host(x.url))).size} source${new Set(f.map(x => host(x.url))).size === 1 ? "" : "s"}`;
+    if (!busy && f.length) acts = `<div class="ract"><button class="btn" type="button" data-act="fresh">Search the web again</button></div>`;
     body = f.length ? f.map(x => `<div class="fcard">${esc(x.text)}<br>${x.url ? `<a class="src" href="${esc(x.url)}" target="_blank" rel="noopener" title="${esc(x.url)}">${esc(host(x.url))}</a>` : ""}</div>`).join("")
       : `<p class="placeholder">${st === "running" ? "Searching the web…" : "Facts appear here once the researcher has finished."}</p>`;
   } else {
@@ -428,7 +431,7 @@ function stepChips(c) {
   return `<div class="steps">` + STAGES.map(s => {
     const st = stageState(c, s);
     const cls = st === "done" ? "ok" : st === "running" ? "run" : st === "failed" ? "bad" : "";
-    return `<span class="chip ${cls}">${ICON[st]}${AGENT_NAME[s]}${st === "running" ? " · " + SUBTEXT[s].running : ""}</span>`;
+    return `<span class="chip ${cls}">${ICON[st]}${AGENT_NAME[s]}${s === "researcher" && c.reused ? " · reused" : st === "running" ? " · " + SUBTEXT[s].running : ""}</span>`;
   }).join("") + `</div>`;
 }
 function botIntro(c) {
@@ -447,6 +450,17 @@ function renderThread() {
     return;
   }
   const o = c.opts || opts;
+  if (c.status === "checking" || c.status === "reply") {
+    const avatar = `<div class="avatar" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 32 32"><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#4338CA" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`;
+    const body = c.status === "checking"
+      ? `<p class="mut" style="font-size:15px">Checking your message…</p>`
+      : `<p>${esc(c.reply)}</p>` + (c.suggestions && c.suggestions.length
+          ? `<div class="sugg" style="justify-content:flex-start;margin:0">${c.suggestions.map(x => `<button type="button" data-topic="${esc(x)}">${esc(x)}</button>`).join("")}</div><p class="mut">Pick one, or type your own topic below.</p>`
+          : `<p class="mut">Try something like “the history of chess” or “how vaccines work”.</p>`);
+    th.innerHTML = `<div class="col"><div class="me"><div class="bub">${esc(c.topic)}</div></div><div class="bot">${avatar}<div class="botbody">${body}</div></div></div>`;
+    th.scrollTop = th.scrollHeight;
+    return;
+  }
   th.innerHTML = `<div class="col">
     <div class="me"><div class="bub">${esc(c.topic)}<small>${esc(cap(o.tone))} · ${lenLabel(o.words)} words · Images: ${esc((IMAGES.find(i => i[0] === o.images) || IMAGES[0])[1])}</small></div></div>
     <div class="bot"><div class="avatar" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 32 32"><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#4338CA" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -467,7 +481,7 @@ function renderSeg() {
 function renderHeader() {
   const c = getChat();
   $("#title").textContent = view === "chat" ? (c ? (c.title || c.topic) : "New chat") : ({ saved: "Saved posts", sources: "Sources library" })[view];
-  $("#segwrap").style.visibility = view === "chat" && c ? "visible" : "hidden";
+  $("#segwrap").style.visibility = view === "chat" && c && c.status !== "reply" && c.status !== "checking" ? "visible" : "hidden";
   $("#saveTop").disabled = !(c && c.final && c.status === "done"); $("#saveTop").classList.toggle("hidden", view !== "chat");
 }
 function renderAll() { renderChats(); renderHeader(); renderSeg(); if (view === "chat") renderThread(); updateComposer(); }
@@ -491,7 +505,7 @@ function setPop(open) { popOpen = open; if (!open) popMenu = null; renderPop(); 
 const touch = matchMedia("(pointer:coarse)");
 function updateComposer() {
   const t = $("#topic"), f = $("#composer"), m = $("#mirror");
-  t.disabled = running;
+  t.disabled = running; $("#micBtn").disabled = running;
   $("#sendBtn").disabled = running || !t.value.trim();
   t.placeholder = running ? "Generating..." : "Write about a topic...";
   // would the text wrap on a single row? measure at the one-row textarea width
@@ -506,60 +520,25 @@ function updateComposer() {
 }
 window.addEventListener("resize", updateComposer);
 
-// ---------- voice (streamed live to Deepgram through the server) ----------
-const CAN_REC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
-let rec = null, recStream = null, recWs = null, recBase = "", recFinal = "", recCancel = false, recClosing = false;
-function micUI(on) { const m = $("#micBtn"); m.classList.toggle("rec", on); m.setAttribute("aria-pressed", on); m.setAttribute("aria-label", on ? "Stop recording" : "Speak instead of typing"); }
-function showLive(interim) {
-  const t = $("#topic"), parts = [recBase, recFinal, interim].filter(Boolean);
-  t.value = parts.join(" "); updateComposer(); t.scrollTop = t.scrollHeight;
-}
-function cleanupMic() {
-  try { rec && rec.state !== "inactive" && rec.stop(); } catch {}
-  if (recStream) recStream.getTracks().forEach(t => t.stop());
-  rec = recStream = null; micUI(false);
-}
-async function startMic() {
-  if (running || rec) return;
-  setPop(false);
-  try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
-  catch { toast("Microphone permission was denied."); return; }
-  recBase = $("#topic").value.trim(); recFinal = ""; recCancel = false; recClosing = false;
-  const ws = recWs = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/api/listen");
-  ws.onmessage = e => {
-    const m = JSON.parse(e.data);
-    if (m.error) { toast(m.error); cleanupMic(); return; }
-    if (recCancel) return;
-    if (m.final) { recFinal = (recFinal ? recFinal + " " : "") + m.text; showLive(""); } else showLive(m.text);
-  };
-  ws.onerror = () => { if (!recClosing) { toast("Could not reach the speech service."); cleanupMic(); } };
-  ws.onclose = () => { cleanupMic(); recWs = null; if (!recCancel) { showLive(""); $("#topic").focus(); } };
-  ws.onopen = () => {
-    try {
-      rec = new MediaRecorder(recStream);
-      rec.ondataavailable = e => { if (e.data.size && ws.readyState === 1) ws.send(e.data); };
-      rec.onstop = () => { if (ws.readyState === 1) ws.send("stop"); };
-      rec.start(250); micUI(true);
-    } catch { toast("Could not start recording."); cleanupMic(); ws.close(); }
-  };
-}
-function stopMic(cancel) {
-  recCancel = !!cancel; recClosing = true;
-  if (cancel) { $("#topic").value = recBase; updateComposer(); }
-  if (rec && rec.state !== "inactive") { try { rec.stop(); } catch {} }   // triggers "stop" -> server flushes last words
-  else if (recWs) recWs.close();
-  if (cancel && recWs) recWs.close();
-  micUI(false);
-}
-if (!CAN_REC) $("#micBtn").classList.add("hidden");
+// ---------- voice typing (static/deepgram_mic.js: live streaming, or short pieces as a fallback) ----------
+const mic = createMic({ input: $("#topic"), button: $("#micBtn"), onError: toast, onChange: updateComposer });
 
 // ---------- generate ----------
+const normTopic = t => t.toLowerCase().replace(/[^\p{L}\p{N}\s]/gu, " ").replace(/\s+/g, " ").trim();
+// Research already done for this topic (any earlier chat, newest first)? Rewrites reuse it instead of searching again.
+function findFacts(topic, except) {
+  const n = normTopic(topic);
+  const hit = chats.find(x => x !== except && x.facts && parseFacts(x.facts).length && normTopic(x.topic) === n);
+  return hit ? hit.facts : "";
+}
 function makeTitle(t) { return t.length > 48 ? t.slice(0, 46).trimEnd() + "…" : t; }
-async function generate(topic, o, existing) {
+async function generate(topic, o, existing, fresh = false) {
   if (running) return;
   let c = existing;
   if (!c) { c = { id: "c" + Date.now(), topic, title: makeTitle(topic), opts: { ...o }, ts: Date.now() }; chats.unshift(c); }
-  Object.assign(c, { facts: "", draft: "", final: "", status: "running", error: "", stages: {}, ts: Date.now(), _follow: true });
+  // Same topic researched before (this chat or another)? Reuse the facts: skips the web search and research call.
+  const reuse = fresh ? "" : ((c.facts && parseFacts(c.facts).length ? c.facts : "") || findFacts(c.topic, c));
+  Object.assign(c, { facts: "", draft: "", final: "", status: "running", error: "", stages: {}, reused: false, ts: Date.now(), _follow: true });
   cur = c.id; agent = "researcher"; view = "chat"; running = true;
   renderAll(); persist();
   let current = null, finished = false;
@@ -572,7 +551,7 @@ async function generate(topic, o, existing) {
   };
   try {
     const [wmin, wmax] = c.opts.words.split("-").map(Number);
-    const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: c.topic, words_min: wmin, words_max: wmax, tone: c.opts.tone, images: c.opts.images }) });
+    const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: c.topic, words_min: wmin, words_max: wmax, tone: c.opts.tone, images: c.opts.images, facts: reuse || null }) });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `Server error ${res.status}`);
     const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;) {
@@ -591,7 +570,7 @@ async function generate(topic, o, existing) {
           if (cur === c.id) agent = "editor";
         } else if (ev.type === "empty") {
           finished = true; if (current) setStage(current, "failed"); c.status = "empty";
-        } else if (ev.type === "note") { if (ev.text.startsWith("Warning")) { toast(ev.text); c.error = ev.text; } }
+        } else if (ev.type === "note") { if (ev.text.startsWith("Reusing")) { c.reused = true; toast("Reusing earlier research. No new web search."); } else if (ev.text.startsWith("Warning")) { toast(ev.text); c.error = ev.text; } }
         else if (ev.type === "error") throw new Error(ev.message);
       }
     }
@@ -602,13 +581,30 @@ async function generate(topic, o, existing) {
     c._follow = false; running = false; persist(); renderAll();
   }
 }
-function submitTopic(text) {
+async function submitTopic(text) {
+  if (running) return;
   const topic = (text ?? $("#topic").value).trim();
   if (!topic) { toast("Enter a topic first."); $("#topic").focus(); return; }
-  setPop(false); stopMic(true);
+  if (mic.active()) mic.cancel();   // after reading the text: cancel() restores the pre-recording text
+  setPop(false);
   $("#topic").value = ""; updateComposer();
   if (touch.matches) $("#topic").blur();
-  generate(topic, opts);
+  // Intent detector: only real topics reach the research -> write -> edit pipeline.
+  const c = { id: "c" + Date.now(), topic, title: makeTitle(topic), opts: { ...opts }, ts: Date.now(), status: "checking", stages: {} };
+  chats.unshift(c); cur = c.id; view = "chat"; running = true; renderAll();
+  let r = { intent: "topic" };
+  if (!findFacts(topic, c)) try {   // a topic we already researched is obviously a topic: skip the check
+    const res = await fetch("/api/classify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: topic }) });
+    if (res.ok) r = await res.json();
+  } catch {}   // detector unreachable: don't block the user, treat it as a topic
+  running = false;
+  if (r.intent === "topic") { generate(topic, c.opts, c); return; }
+  Object.assign(c, { status: "reply", intent: r.intent, reply: r.reply, suggestions: r.suggestions || [] });
+  persist(); renderAll();
+}
+function pickSuggestion(topic) {
+  const c = getChat(); if (!c || running) return;
+  c.topic = topic; c.title = makeTitle(topic); generate(topic, c.opts, c);
 }
 
 // ---------- actions ----------
@@ -745,12 +741,14 @@ $$(".sg").forEach(b => b.addEventListener("click", () => { agent = b.dataset.age
 $("#saveTop").addEventListener("click", savePost);
 $("#thread").addEventListener("click", e => {
   const s = e.target.closest("[data-sugg]"); if (s) { $("#topic").value = s.dataset.sugg; $("#topic").focus(); updateComposer(); return; }
+  const tp = e.target.closest("[data-topic]"); if (tp) { pickSuggestion(tp.dataset.topic); return; }
   const a = e.target.closest("[data-act]"); if (!a) return;
   const c = getChat();
   if (a.dataset.act === "copy") copyMd();
   else if (a.dataset.act === "save") savePost();
   else if (a.dataset.act === "toEditor") { agent = "editor"; renderSeg(); renderThread(); }
   else if (a.dataset.act === "regen" && c) generate(c.topic, c.opts, c);
+  else if (a.dataset.act === "fresh" && c) generate(c.topic, c.opts, c, true);
 });
 $("#composer").addEventListener("submit", e => { e.preventDefault(); submitTopic(); });
 $("#topic").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !touch.matches) { e.preventDefault(); submitTopic(); } });
@@ -762,16 +760,65 @@ $("#pop").addEventListener("click", e => {
   const s = e.target.closest("[data-set]"); if (s) { opts[popMenu] = s.dataset.set; persistOpts(); popMenu = null; renderPop(); }
 });
 document.addEventListener("click", e => { if (popOpen && !e.target.closest("#pop,#optBtn")) setPop(false); });
-document.addEventListener("keydown", e => { if (e.key === "Escape") { if (popOpen) { setPop(false); $("#optBtn").focus(); } else if (rec) stopMic(true); else closeNav(); } });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { if (popOpen) { setPop(false); $("#optBtn").focus(); } else closeNav(); } });
 $("#attachBtn").addEventListener("click", () => $("#fileInput").click());
 $("#addFiles").addEventListener("click", () => $("#fileInput").click());
 $("#fileInput").addEventListener("change", e => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ""; });
-$("#micBtn").addEventListener("click", () => rec ? stopMic(false) : startMic());
 $("#exPdf").addEventListener("click", exportPdf);
 $("#exTxt").addEventListener("click", exportTxt);
 $("#ingest").addEventListener("click", ingest);
 $("#addLink").addEventListener("click", addLink);
 $("#linkUrl").addEventListener("keydown", e => { if (e.key === "Enter") addLink(); });
+
+// ---------- interactive dotted background ----------
+// A grid of small dots that slide away from the cursor with spring physics and bounce back.
+(function dottedBackground() {
+  const canvas = $("#dots"), ctx = canvas.getContext("2d");
+  const spacing = 32, mouse = { x: null, y: null, radius: 110 };
+  const still = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const BASE = "rgba(17, 24, 39, 0.10)", ACTIVE = "rgba(67, 56, 202, 0.35)";   // dark-grey dots, brand-indigo near the cursor
+  let dots = [], w = 0, h = 0, raf = 0;
+
+  function init() {
+    const dpr = window.devicePixelRatio || 1;
+    w = window.innerWidth; h = window.innerHeight;
+    canvas.width = w * dpr; canvas.height = h * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dots = [];
+    for (let x = spacing / 2; x < w; x += spacing)
+      for (let y = spacing / 2; y < h; y += spacing)
+        dots.push({ bx: x, by: y, x, y, vx: 0, vy: 0, size: 1.5 });
+  }
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    for (const d of dots) {
+      let dist = 0, close = false;
+      if (mouse.x !== null) {
+        const dx = mouse.x - d.x, dy = mouse.y - d.y;
+        dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < mouse.radius) {
+          close = true;
+          const force = (mouse.radius - dist) / mouse.radius, a = Math.atan2(dy, dx);
+          d.vx -= Math.cos(a) * force * 8;   // push away from the cursor
+          d.vy -= Math.sin(a) * force * 8;
+        }
+      }
+      d.vx += (d.bx - d.x) * 0.06;           // spring back to the grid position
+      d.vy += (d.by - d.y) * 0.06;
+      d.vx *= 0.82; d.vy *= 0.82;            // friction
+      d.x += d.vx; d.y += d.vy;
+      ctx.beginPath();
+      ctx.arc(d.x, d.y, close ? d.size + (1 - dist / mouse.radius) * 1.8 : d.size, 0, Math.PI * 2);
+      ctx.fillStyle = close ? ACTIVE : BASE;
+      ctx.fill();
+    }
+    if (!still) raf = requestAnimationFrame(frame);
+  }
+  window.addEventListener("resize", () => { init(); if (still) frame(); });
+  window.addEventListener("mousemove", e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+  document.addEventListener("mouseleave", () => { mouse.x = mouse.y = null; });
+  init(); frame();
+})();
 
 show("chat"); loadConfig();
 </script>

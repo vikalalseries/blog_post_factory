@@ -1,75 +1,71 @@
-"""Speech-to-text through the Deepgram Python SDK (https://github.com/deepgram/deepgram-python-sdk)."""
+"""Speech-to-text through Deepgram's plain HTTP API (httpx only, no SDK).
+
+Designed for Vercel: serverless Python functions cannot hold a WebSocket open, so the
+server never streams audio. It does two short, stateless HTTP things instead:
+
+  transcribe()   one short recording in -> text out          (POST /api/transcribe)
+  voice_token()  a 60 second temporary token for the browser (POST /api/voice-token)
+                 so the browser can stream to Deepgram itself WITHOUT ever seeing the real key.
+
+The real key (DEEPGRAM_API_KEY in .env / Vercel environment variables) stays on the server.
+"""
 
 from __future__ import annotations
 
-from deepgram import AsyncDeepgramClient
+import httpx
 
 from . import config
 
+LISTEN_URL = "https://api.deepgram.com/v1/listen"
+GRANT_URL = "https://api.deepgram.com/v1/auth/grant"
 
-async def transcribe_audio(audio: bytes, language: str | None = None) -> str:
-    """Send recorded audio bytes (webm/opus, mp4, wav...) to Deepgram and return the text."""
+
+class SpeechUnavailable(Exception):
+    """The Deepgram key is not configured (HTTP 503)."""
+
+
+class SpeechFailed(Exception):
+    """Deepgram rejected or failed the request (HTTP 502)."""
+
+
+def _auth() -> dict[str, str]:
     if not config.DEEPGRAM_API_KEY:
-        raise RuntimeError("DEEPGRAM_API_KEY is not set in .env")
-    client = AsyncDeepgramClient(api_key=config.DEEPGRAM_API_KEY)
-    options = {"model": "nova-3", "smart_format": True, "punctuate": True}
-    if language:
-        options["language"] = language
-    else:
-        options["detect_language"] = True
-    response = await client.listen.v1.media.transcribe_file(request=audio, **options)
-    channels = response.results.channels
-    if not channels or not channels[0].alternatives:
-        return ""
-    return (channels[0].alternatives[0].transcript or "").strip()
+        raise SpeechUnavailable("Voice typing is not configured: set DEEPGRAM_API_KEY in .env (or in Vercel's Environment Variables).")
+    return {"Authorization": f"Token {config.DEEPGRAM_API_KEY}"}
 
 
-async def live_transcribe(ws, language: str | None = None) -> None:
-    """Relay a browser WebSocket to Deepgram live transcription.
+async def transcribe(audio: bytes, content_type: str = "audio/webm") -> str:
+    """Send one short recording to Deepgram and return the transcript (may be empty)."""
+    headers = {**_auth(), "Content-Type": content_type or "audio/webm"}
+    params = {"model": "nova-3", "language": "multi", "smart_format": "true", "punctuate": "true"}
+    try:
+        async with httpx.AsyncClient(timeout=30) as client:
+            resp = await client.post(LISTEN_URL, params=params, headers=headers, content=audio)
+        resp.raise_for_status()
+        channels = resp.json().get("results", {}).get("channels", [])
+        alts = channels[0].get("alternatives", []) if channels else []
+        return (alts[0].get("transcript", "") if alts else "").strip()
+    except httpx.HTTPStatusError as exc:
+        raise SpeechFailed(f"Deepgram returned {exc.response.status_code}.") from exc
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SpeechFailed(f"Could not reach Deepgram: {exc.__class__.__name__}.") from exc
 
-    The browser sends binary audio chunks (MediaRecorder webm/opus) and finally the text
-    "stop". We reply with JSON: {"text": "...", "final": bool} while the user speaks.
+
+async def voice_token(ttl_seconds: int = 60) -> str:
+    """Ask Deepgram for a short-lived token the browser can use for live streaming.
+
+    Needs a key with the Member role or higher; with a weaker key Deepgram answers 403, which
+    becomes SpeechFailed and the browser falls back to short recordings via /api/transcribe.
     """
-    import asyncio
-
-    from starlette.websockets import WebSocketDisconnect
-
-    if not config.DEEPGRAM_API_KEY:
-        await ws.send_json({"error": "DEEPGRAM_API_KEY is not set in .env"})
-        return
-    client = AsyncDeepgramClient(api_key=config.DEEPGRAM_API_KEY)
-    opts = {"model": "nova-3", "interim_results": "true", "smart_format": "true", "punctuate": "true"}
-    if language:
-        opts["language"] = language
-    async with client.listen.v1.connect(**opts) as dg:
-
-        async def downstream() -> None:
-            async for msg in dg:
-                if getattr(msg, "type", "") != "Results":
-                    continue
-                alts = msg.channel.alternatives
-                text = (alts[0].transcript if alts else "").strip()
-                if text:
-                    await ws.send_json({"text": text, "final": bool(msg.is_final)})
-
-        reader = asyncio.create_task(downstream())
-        try:
-            while True:
-                data = await ws.receive()
-                if data.get("type") == "websocket.disconnect":
-                    break
-                if data.get("bytes"):
-                    await dg.send_media(data["bytes"])
-                elif data.get("text") == "stop":
-                    break
-            await dg.send_finalize()
-            await dg.send_close_stream()
-            try:
-                await asyncio.wait_for(reader, timeout=5)
-            except asyncio.TimeoutError:
-                reader.cancel()
-        except WebSocketDisconnect:
-            reader.cancel()
-        finally:
-            if not reader.done():
-                reader.cancel()
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            resp = await client.post(GRANT_URL, headers=_auth(), json={"ttl_seconds": ttl_seconds})
+        resp.raise_for_status()
+        token = resp.json().get("access_token")
+    except httpx.HTTPStatusError as exc:
+        raise SpeechFailed(f"Deepgram refused to issue a token ({exc.response.status_code}).") from exc
+    except (httpx.HTTPError, ValueError) as exc:
+        raise SpeechFailed(f"Could not reach Deepgram: {exc.__class__.__name__}.") from exc
+    if not token:
+        raise SpeechFailed("Deepgram returned no token.")
+    return token

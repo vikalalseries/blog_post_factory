@@ -9,4 +9,3 @@ fpdf2
 pypdf
 httpx
 vercel
-deepgram-sdk
