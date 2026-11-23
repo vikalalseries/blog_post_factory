@@ -2,218 +2,305 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Blog Post Factory</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@600;700&display=swap" rel="stylesheet">
 <style>
+:root{
+  --bg:#F4F5F9;--surface:#fff;--ink:#111827;--ink2:#374151;--mut:#5B6475;--line:#E5E7EB;--line2:#D1D5DB;
+  --brand:#4338CA;--brand-d:#3730A3;--brand-l:#EEF2FF;--side:#1B1F3B;--side2:#2A2F57;--side-ink:#C7CBE0;
+  --ok:#15803D;--ok-l:#DCFCE7;--warn-l:#FEF3C7;--warn:#92400E;--bad:#B91C1C;--bad-l:#FEE2E2;
+  --shadow:0 1px 2px rgba(16,24,40,.06),0 8px 24px rgba(16,24,40,.06);
+}
 *{box-sizing:border-box}
 html,body{height:100%;overflow:hidden}
-body{margin:0;font-family:Inter,Arial,sans-serif;color:#111827;background:#F5F6FA}
-.card{background:#fff;border:1px solid #E5E7EB;border-radius:12px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
-.lbl{font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:#5B6475}
-.mut{font-size:13px;color:#5B6475}
-.btn{font:600 14px Inter,Arial,sans-serif;min-height:44px;padding:0 18px;border-radius:8px;border:1px solid #D1D5DB;background:#fff;color:#111827;cursor:pointer}
-.btn:hover:not(:disabled){background:#F3F4F6}
-.btn.pri{background:#4338CA;border-color:#4338CA;color:#fff}
-.btn.pri:hover:not(:disabled){background:#3730A3}
-.btn:disabled{opacity:.5;cursor:not-allowed}
-.btn:focus-visible,input:focus-visible,.nav:focus-visible,.tab:focus-visible{outline:2px solid #4338CA;outline-offset:2px}
-.nav{display:flex;align-items:center;gap:12px;height:44px;padding:0 12px;border-radius:8px;font-size:14px;font-weight:500;color:#C7CBE0;text-decoration:none;cursor:pointer}
-.nav:hover{background:#242949}
-.nav.on{background:#2A2F57;color:#fff}
-.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
-.chunk{border:1px solid #E5E7EB;border-radius:8px;padding:12px;font-size:13px;line-height:1.5;color:#374151}
-.chunk .pill{margin-bottom:6px;background:#EEF2FF;color:#3730A3;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-
-.app{display:flex;height:100vh}
-aside.side{width:248px;flex:none;background:#1B1F3B;padding:18px 14px;display:flex;flex-direction:column;gap:18px;overflow:hidden}
-main{flex:1;padding:16px 28px;display:flex;flex-direction:column;gap:12px;min-width:0;min-height:0;overflow:hidden}
+body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased}
+button{font-family:inherit;color:inherit}
 .hidden{display:none!important}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--mut)}
+.mut{font-size:13px;color:var(--mut)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(16,24,40,.05)}
+.btn{font:600 14px Inter,Arial,sans-serif;min-height:44px;padding:0 18px;border-radius:999px;border:1px solid var(--line2);background:#fff;cursor:pointer;transition:background .15s}
+.btn:hover:not(:disabled){background:#F3F4F6}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover:not(:disabled){background:var(--brand-d)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.ico{width:44px;height:44px;border-radius:50%;border:1px solid var(--line2);background:#fff;padding:0;display:inline-flex;align-items:center;justify-content:center;flex:none;cursor:pointer;transition:background .15s}
+.ico:hover:not(:disabled){background:#F3F4F6}
+.ico.fill{background:var(--brand);border-color:var(--brand);color:#fff}
+.ico.fill:hover:not(:disabled){background:var(--brand-d)}
+.ico.bare{border-color:transparent;background:transparent}
+.ico:disabled{opacity:.4;cursor:not-allowed}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+.pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600}
 
-.form{padding:12px 16px;display:flex;gap:14px;align-items:flex-end}
-.form input[type=text]{height:44px;border:1px solid #D1D5DB;border-radius:8px;padding:0 14px;font-size:15px;font-family:inherit;width:100%}
-.field{display:flex;flex-direction:column;gap:6px}
-select{height:44px;border:1px solid #D1D5DB;border-radius:8px;padding:0 12px;font-size:14px;background:#fff;font-family:inherit}
+/* layout */
+.app{display:flex;height:100vh;height:100dvh}
+aside.side{width:272px;flex:none;background:var(--side);padding:16px 12px;display:flex;flex-direction:column;gap:12px;overflow:hidden;color:var(--side-ink);transition:transform .2s}
+.brand{display:flex;align-items:center;gap:10px;padding:0 8px;color:#fff;font-weight:700;font-size:16px}
+.newchat{width:100%;background:#fff;color:var(--side);border-color:#fff}
+.newchat:hover:not(:disabled){background:#E0E7FF!important}
+.search{height:44px;border-radius:999px;border:1px solid #3A4070;background:var(--side2);display:flex;align-items:center;gap:8px;padding:0 14px}
+.search input{flex:1;min-width:0;background:none;border:0;color:#fff;font:14px Inter,Arial,sans-serif;outline:0}
+.search input::placeholder{color:#9AA0C4}
+.search:focus-within{border-color:#8B93E8}
+.chats{flex:1;min-height:0;overflow:auto;display:flex;flex-direction:column;gap:2px}
+.chats .lbl{color:#8E94BD;padding:10px 10px 4px}
+.chatrow{display:flex;align-items:center;gap:6px;border-radius:10px}
+.chatrow:hover{background:#242949}
+.chatrow.on{background:var(--side2)}
+.chatrow .t{flex:1;min-width:0;min-height:44px;text-align:left;background:none;border:0;padding:0 10px;font-size:14px;color:var(--side-ink);cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chatrow.on .t{color:#fff;font-weight:600}
+.chatrow .x{width:32px;height:32px;margin-right:6px;border-radius:8px;border:0;background:none;color:#8E94BD;cursor:pointer;opacity:0;font-size:16px}
+.chatrow:hover .x,.chatrow .x:focus-visible{opacity:1}
+.chatrow .x:hover{background:#3A4070;color:#fff}
+.nav{display:flex;align-items:center;gap:12px;min-height:44px;padding:0 12px;border-radius:10px;font-size:14px;font-weight:500;color:var(--side-ink);background:none;border:0;width:100%;text-align:left;cursor:pointer}
+.nav:hover{background:#242949}
+.nav.on{background:var(--side2);color:#fff}
+.modelbox{border-radius:10px;border:1px dashed #3A4070;padding:10px 12px;font-size:12px;color:var(--side-ink)}
+.modelbox b{color:#fff}
+.scrim{display:none}
 
-.pipeline{padding:10px 16px;display:flex;align-items:center;gap:14px}
-.step{flex:1;display:flex;gap:12px;align-items:center;min-width:0}
-.step .name{font-weight:600;font-size:14px}
-.link{width:40px;height:2px;background:#C7CBE0;flex:none}
-.link.done{background:#15803D}
+main{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+.top{height:68px;flex:none;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;padding:0 24px}
+.top h1{margin:0;font-size:17px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.top .right{display:flex;justify-content:flex-end;align-items:center;gap:8px}
+.top .left{display:flex;align-items:center;gap:8px;min-width:0}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:999px;padding:3px;background:#fff;gap:2px}
+.sg{min-height:40px;padding:0 18px;border-radius:999px;border:0;background:transparent;font:600 13px Inter,Arial,sans-serif;color:var(--ink2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.sg:hover:not(.on){background:#F3F4F6}
+.sg.on{background:var(--brand);color:#fff}
+.dot{width:7px;height:7px;border-radius:50%;background:#C7CBE0;flex:none}
+.dot.run{background:#F59E0B;animation:pulse 1s infinite}
+.dot.ok{background:#22C55E}
+.dot.bad{background:#EF4444}
+.sg.on .dot:not(.run):not(.ok):not(.bad){background:#A5B4FC}
+@keyframes pulse{50%{opacity:.35}}
+.menu-btn{display:none}
+
+.page{flex:1;min-height:0;overflow:auto;padding:8px 24px 24px}
+.thread{flex:1;min-height:0;overflow:auto;padding:8px 24px;scroll-behavior:smooth}
+.col{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.me{display:flex;justify-content:flex-end}
+.bub{max-width:80%;padding:12px 16px;background:var(--brand);color:#fff;border-radius:20px 20px 4px 20px;font-size:15px;line-height:1.5;overflow-wrap:anywhere}
+.bub small{display:block;margin-top:4px;opacity:.75;font-size:12px}
+.bot{display:flex;gap:12px}
+.avatar{width:32px;height:32px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--brand-l)}
+.botbody{flex:1;min-width:0;display:flex;flex-direction:column;gap:12px}
+.botbody>p{margin:0;font-size:15px;line-height:1.5}
+.result{padding:16px;display:flex;flex-direction:column;gap:12px}
+.rhead{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.rhead strong{font-size:15px}
+.steps{display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border:1px dashed var(--line2);border-radius:999px;padding:5px 12px;font-size:12px;font-weight:600;color:var(--ink2);background:#fff}
+.chip.ok{border-style:solid;border-color:#86EFAC;background:var(--ok-l);color:#166534}
+.chip.run{border-style:solid;border-color:#FCD34D;background:var(--warn-l);color:var(--warn)}
+.chip.bad{border-style:solid;border-color:#FCA5A5;background:var(--bad-l);color:#991B1B}
 .spin{animation:spin 1s linear infinite;transform-origin:center}
 @keyframes spin{to{transform:rotate(360deg)}}
+.fcard{border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55;color:var(--ink2);background:#FAFAFC}
+.fcard .src{display:inline-block;margin-top:8px;padding:2px 10px;border:1px dashed var(--line2);border-radius:999px;font-size:11px;font-weight:600;color:var(--mut);background:#fff;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:bottom}
+.post{border:1px solid var(--line);border-radius:12px;padding:20px 24px;max-height:min(52vh,560px);overflow:auto;background:#fff}
+.post img{display:block;max-width:100%;max-height:260px;margin:4px auto 14px;border-radius:10px;object-fit:cover}
+.post h2{margin:0 0 14px;font-family:'Source Serif 4',Georgia,serif;font-size:26px;line-height:1.25}
+.post h3{margin:20px 0 8px;font-size:17px}
+.post p{margin:0 0 12px;font-size:15px;line-height:1.75;color:var(--ink2)}
+.post ul{margin:0 0 12px;padding-left:20px;font-size:15px;line-height:1.7;color:var(--ink2)}
+.post a{color:var(--brand)}
+.placeholder{color:#8A93A5;font-size:14px;margin:0}
+.ract{display:flex;gap:8px;flex-wrap:wrap}
+.mini{display:flex;gap:4px}
+.mini button{width:40px;height:40px;border-radius:50%;border:0;background:none;color:var(--mut);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.mini button:hover{background:#E5E7EB;color:var(--ink)}
+.err{color:var(--bad);background:var(--bad-l);border-radius:10px;padding:10px 14px;font-size:14px}
 
-.work{flex:1;display:flex;gap:16px;min-height:0}
-.panel{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
-.tabs{display:flex;gap:4px;padding:12px 16px 0;border-bottom:1px solid #E5E7EB;font-size:14px;font-weight:600}
-.tab{padding:10px 14px;color:#5B6475;background:none;border:0;border-bottom:2px solid transparent;font:inherit;cursor:pointer}
-.tab.on{color:#4338CA;border-bottom-color:#4338CA}
-.body{flex:1;min-height:0;padding:20px 32px;overflow:auto}
-.body img{display:block;max-width:100%;max-height:240px;margin:4px auto 14px;border-radius:8px;object-fit:cover}
-.body h2{margin:0 0 14px;font-family:'Source Serif 4',Georgia,serif;font-size:26px;line-height:1.25}
-.body h3{margin:20px 0 8px;font-size:16px}
-.body p{margin:0 0 12px;font-size:15px;line-height:1.7;color:#374151}
-.body ul{margin:0 0 12px;padding-left:20px;font-size:14px;line-height:1.7;color:#374151}
-.body .placeholder{color:#9CA3AF}
-.fact{display:flex;gap:10px;font-size:14px;line-height:1.5;margin-bottom:12px}
-.fact .src{margin-left:auto;color:#5B6475;font-size:13px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:none}
-pre.draft{white-space:pre-wrap;font:14px/1.6 Inter,Arial,sans-serif;color:#374151;margin:0}
-.foot{border-top:1px solid #E5E7EB;padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px}
-aside.chunks{width:320px;flex:none;padding:16px;display:flex;flex-direction:column;gap:12px;overflow:auto;min-height:0}
+/* empty state */
+.empty{max-width:640px;margin:8vh auto 0;text-align:center;display:flex;flex-direction:column;align-items:center;gap:14px;padding:0 8px}
+.empty h2{margin:0;font-family:'Source Serif 4',Georgia,serif;font-size:32px;line-height:1.2}
+.empty p{margin:0;color:var(--mut);font-size:15px;line-height:1.5}
+.sugg{display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-top:6px}
+.sugg button{min-height:44px;padding:0 16px;border-radius:999px;border:1px solid var(--line2);background:#fff;font:500 14px Inter,Arial,sans-serif;cursor:pointer}
+.sugg button:hover{background:var(--brand-l);border-color:#A5B4FC}
 
-.srcrow{display:flex;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid #E5E7EB;border-radius:8px;font-size:14px}
+/* composer - ChatGPT-style pill, same on desktop and mobile */
+.dock{flex:none;padding:8px 24px calc(14px + env(safe-area-inset-bottom))}
+.dockin{max-width:820px;margin:0 auto;position:relative}
+.composer{background:#fff;border:1px solid var(--line2);border-radius:999px;padding:6px;display:grid;grid-template-columns:auto 1fr auto;grid-template-areas:"l t r";align-items:end;gap:0 4px;box-shadow:var(--shadow);transition:border-color .15s,box-shadow .15s}
+.composer.multi{grid-template-columns:1fr auto;grid-template-areas:"t t" "l r";border-radius:26px;row-gap:2px}
+.composer:focus-within{border-color:#10A37F;box-shadow:0 0 0 3px rgba(16,163,127,.25),var(--shadow)}
+.composer textarea{grid-area:t;min-width:0;width:100%;resize:none;border:0;outline:0;background:transparent;font:14px/21px Inter,Arial,sans-serif;color:var(--ink);padding:9px 8px;height:40px;max-height:200px;overflow-y:auto;scrollbar-width:none}
+.composer textarea::-webkit-scrollbar{display:none}
+.composer textarea::placeholder{color:#8A93A5}
+.cl{grid-area:l;display:flex;gap:2px}
+.cr{grid-area:r;display:flex;gap:4px;align-items:center}
+.composer .ico{width:40px;height:40px;border-color:transparent;background:transparent}
+.composer .ico:hover:not(:disabled){background:#F3F4F6}
+.composer .ico.fill{background:var(--ink);border-color:var(--ink);color:#fff}
+.composer .ico.fill:hover:not(:disabled){background:#374151}
+.composer .ico.fill:disabled{background:#D1D5DB;border-color:#D1D5DB;opacity:1}
+#optBtn,#optBtn:hover:not(:disabled){background:transparent;transition:none}
+.composer .ico.rec{background:var(--bad-l);color:var(--bad);animation:pulse 1.2s infinite}
+.ghostmirror{position:absolute;left:-9999px;top:0;visibility:hidden;height:0;overflow:hidden;padding:9px 8px;border:0;font:14px/21px Inter,Arial,sans-serif;resize:none}
+@media (max-width:640px){.composer textarea,.ghostmirror{font-size:16px;line-height:24px;max-height:140px}}
+.foot{text-align:center;margin-top:8px;font-size:12px;color:var(--mut)}
+.pop{position:absolute;left:0;bottom:100%;margin-bottom:10px;width:min(320px,100%);background:#fff;border:1px solid var(--line2);border-radius:16px;padding:8px 12px;box-shadow:var(--shadow);z-index:5}
+.pop .lbl{padding:8px 6px 2px}
+.prow{display:flex;justify-content:space-between;align-items:center;width:100%;min-height:48px;padding:0 6px;border:0;border-bottom:1px solid var(--line);background:none;font:600 14px Inter,Arial,sans-serif;cursor:pointer;text-align:left}
+.prow:last-child{border-bottom:0}
+.prow:hover{background:#F9FAFB}
+.prow span+span{font-weight:400;color:var(--mut)}
+.opts{display:flex;flex-wrap:wrap;gap:8px;padding:8px 4px 10px}
+.opt{min-height:44px;padding:0 14px;border-radius:999px;border:1px solid var(--line2);background:#fff;font:600 13px Inter,Arial,sans-serif;cursor:pointer;white-space:nowrap}
+.opt:hover{background:#F3F4F6}
+.opt.on{background:var(--brand);border-color:var(--brand);color:#fff}
+.back{display:flex;align-items:center;gap:6px;min-height:44px;background:none;border:0;font:600 13px Inter,Arial,sans-serif;color:var(--mut);cursor:pointer;padding:0 4px}
+
+/* secondary pages */
+.pcol{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+.saved{display:flex;gap:16px;height:100%;min-height:0}
+.plist{width:300px;flex:none;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
+.pitem{text-align:left;border:1px solid var(--line);border-radius:10px;background:#fff;padding:10px 12px;cursor:pointer;font:inherit;min-height:44px}
+.pitem:hover{background:#F3F4F6}.pitem.on{border-color:var(--brand);background:var(--brand-l)}
+.pitem b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pitem span{font-size:12px;color:var(--mut)}
+.viewer{flex:1;min-width:0;display:flex;flex-direction:column;min-height:0}
+.viewer .post{flex:1;max-height:none;border:0;border-radius:14px 14px 0 0}
+.viewer .vfoot{border-top:1px solid var(--line);padding:10px 16px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.srcrow{display:flex;justify-content:space-between;gap:10px;padding:12px;border:1px solid var(--line);border-radius:10px;font-size:14px}
 .srcrow span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .srcrow .mut{flex:none}
-.page{display:flex;flex-direction:column;gap:12px;min-height:0;overflow:auto}
-@media (max-height:760px){#subtitle{display:none}.btn,.form input[type=text],select{min-height:38px;height:38px}}
-.saved{flex:1;display:flex;gap:16px;min-height:0}
-.plist{width:300px;flex:none;padding:12px;display:flex;flex-direction:column;gap:8px;overflow:auto;min-height:0}
-.pitem{text-align:left;border:1px solid #E5E7EB;border-radius:8px;background:#fff;padding:10px 12px;cursor:pointer;font:inherit}
-.pitem:hover{background:#F3F4F6}.pitem.on{border-color:#4338CA;background:#EEF2FF}
-.pitem b{display:block;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.pitem span{font-size:12px;color:#5B6475}
-.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1B1F3B;color:#fff;padding:12px 18px;border-radius:8px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:10}
-.err{color:#B91C1C;font-size:14px;margin-top:8px}
+.linkin{flex:1;min-width:0;height:44px;border:1px solid var(--line2);border-radius:999px;padding:0 16px;font:14px Inter,Arial,sans-serif}
+.toast{position:fixed;bottom:96px;left:50%;transform:translateX(-50%);background:var(--side);color:#fff;padding:12px 18px;border-radius:999px;font-size:14px;box-shadow:0 4px 12px rgba(0,0,0,.2);z-index:30;max-width:90vw}
+
+/* mobile */
+@media (max-width:900px){
+  aside.side{position:fixed;inset:0 auto 0 0;z-index:20;transform:translateX(-100%);width:min(300px,86vw)}
+  body.nav-open aside.side{transform:none}
+  body.nav-open .scrim{display:block;position:fixed;inset:0;background:rgba(17,24,39,.45);z-index:19}
+  .menu-btn{display:inline-flex}
+  .top{padding:0 10px 6px;grid-template-columns:1fr auto;grid-template-rows:56px auto;gap:0 8px;height:auto}
+  .top .segwrap{grid-column:1/-1;grid-row:2;display:flex;justify-content:center}
+  .top .left{grid-column:1;grid-row:1}
+  .top .right{grid-column:2;grid-row:1}
+  .sg{min-height:36px;padding:0 14px;font-size:12px}
+  .thread,.page{padding-left:14px;padding-right:14px}
+  .dock{padding-left:12px;padding-right:12px}
+  .bub{max-width:88%}
+  .post{padding:16px}
+  .post h2{font-size:22px}
+  .empty{margin-top:4vh}.empty h2{font-size:26px}
+  .saved{flex-direction:column;height:auto}
+  .plist{width:auto;max-height:220px}
+  .viewer .post{max-height:60vh}
+  .hide-sm{display:none}
+}
+@media (max-width:900px){
+  html,body{width:100%;max-width:100vw;overflow:hidden}
+  .app{width:100%}
+  main{width:100%;overflow:hidden}
+  .thread,.page,.chats,.post,.plist{scrollbar-width:none;-ms-overflow-style:none}
+  .thread::-webkit-scrollbar,.page::-webkit-scrollbar,.chats::-webkit-scrollbar,.post::-webkit-scrollbar,.plist::-webkit-scrollbar{display:none}
+  .col,.botbody,.result,.card{min-width:0;max-width:100%}
+  .dock{padding:6px 10px calc(10px + env(safe-area-inset-bottom))}
+  .composer{padding:4px;gap:0 2px}
+  .composer .ico{width:40px;height:40px}
+  .cl{gap:0}.cr{gap:2px}
+  .foot{display:none}
+  .pop{width:min(300px,calc(100vw - 20px))}
+  .toast{bottom:84px}
+  .steps .chip{font-size:11px;padding:4px 10px}
+}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
 <body>
 <div class="app">
-<aside class="side">
-  <div style="display:flex;align-items:center;gap:10px;padding:0 8px">
-    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#6366F1"/><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    <div style="color:#fff;font-weight:700;font-size:16px">Blog Post Factory</div>
+<div class="scrim" id="scrim"></div>
+<aside class="side" id="side" aria-label="Sidebar">
+  <div class="brand">
+    <svg aria-hidden="true" width="32" height="32" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#6366F1"/><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    Post Factory
   </div>
-  <nav style="display:flex;flex-direction:column;gap:4px">
-    <a class="nav on" data-view="new" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>New post</a>
-    <a class="nav" data-view="saved" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 10h16"/></svg>Saved posts</a>
-    <a class="nav" data-view="sources" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6c0-1 3-2 8-2s8 1 8 2-3 2-8 2-8-1-8-2zM4 6v12c0 1 3 2 8 2s8-1 8-2V6"/></svg>Sources library</a>
-    <a class="nav" data-view="settings" tabindex="0"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>Settings</a>
-  </nav>
-  <div style="margin-top:auto;border-radius:10px;background:#2A2F57;padding:14px;color:#C7CBE0;font-size:13px;line-height:1.5"><div style="color:#fff;font-weight:600;margin-bottom:4px">Model</div><span id="modelName">Gemini free tier</div>
+  <button id="newChat" class="btn newchat" type="button">+ New chat</button>
+  <label class="search"><svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9AA0C4" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="chatSearch" type="search" placeholder="Search chats" aria-label="Search chats" autocomplete="off"></label>
+  <div id="chatList" class="chats" role="list"></div>
+  <div style="display:flex;flex-direction:column;gap:2px">
+    <button class="nav" data-view="saved" type="button"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 10h16"/></svg>Saved posts</button>
+    <button class="nav" data-view="sources" type="button"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6c0-1 3-2 8-2s8 1 8 2-3 2-8 2-8-1-8-2zM4 6v12c0 1 3 2 8 2s8-1 8-2V6"/></svg>Sources library</button>
+  </div>
 </aside>
 
 <main>
-  <header style="display:flex;justify-content:space-between;align-items:center;gap:12px">
-    <div><h1 id="title" style="margin:0;font-size:24px;font-weight:700">New blog post</h1><div id="subtitle" class="mut" style="margin-top:2px">Researcher, writer and editor agents work in sequence on your sources.</div></div>
-    <span id="status" class="pill" style="background:#E5E7EB;color:#374151">Idle</span>
+  <header class="top">
+    <div class="left">
+      <button id="menuBtn" class="ico bare menu-btn" type="button" aria-label="Open menu"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>
+      <h1 id="title">New chat</h1>
+    </div>
+    <div id="segwrap" class="segwrap"><div class="seg" role="group" aria-label="Agent view">
+      <button class="sg" type="button" data-agent="researcher" aria-pressed="false"><span class="dot"></span>Research</button>
+      <button class="sg" type="button" data-agent="writer" aria-pressed="false"><span class="dot"></span>Writer</button>
+      <button class="sg" type="button" data-agent="editor" aria-pressed="true"><span class="dot"></span>Editor</button>
+    </div></div>
+    <div class="right">
+      <button id="saveTop" class="btn hide-sm" type="button" disabled>Save to file</button>
+      <button id="newChatTop" class="ico bare menu-btn" type="button" aria-label="New chat"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+    </div>
   </header>
 
-  <!-- NEW POST -->
-  <div id="view-new" class="page" style="flex:1;overflow:hidden">
-    <section class="card form">
-      <div class="field" style="flex:1">
-        <label class="lbl" for="topic">Topic</label>
-        <input id="topic" type="text" placeholder="e.g. The history of chess">
+  <!-- CHAT -->
+  <section id="view-chat" style="flex:1;min-height:0;display:flex;flex-direction:column">
+    <div id="thread" class="thread" aria-live="polite"></div>
+    <div class="dock">
+      <div class="dockin">
+        <div id="pop" class="pop hidden" role="menu"></div>
+        <form id="composer" class="composer" autocomplete="off">
+          <textarea id="topic" rows="1" placeholder="Write about a topic..." aria-label="Blog post topic" enterkeyhint="send"></textarea>
+          <div class="cl">
+            <button id="optBtn" class="ico" type="button" aria-label="Options: tone, length, images" aria-haspopup="true" aria-expanded="false" style="font-size:24px;font-weight:400">+</button>
+            <button id="attachBtn" class="ico" type="button" aria-label="Attach a file to the sources library"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11l-8.5 8.5a5 5 0 0 1-7-7L14 4a3.5 3.5 0 0 1 5 5l-8.5 8.5a2 2 0 0 1-3-3L15 7"/></svg></button>
+          </div>
+          <div class="cr">
+            <button id="micBtn" class="ico" type="button" aria-label="Speak instead of typing" aria-pressed="false"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg></button>
+            <button id="sendBtn" class="ico fill" type="submit" aria-label="Send" disabled><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+          </div>
+        </form>
+        <textarea id="mirror" class="ghostmirror" rows="1" aria-hidden="true" tabindex="-1"></textarea>
+        <div class="foot">Agents can make mistakes. Check facts against your sources.</div>
       </div>
-      <div class="field" style="width:140px">
-        <label class="lbl" for="src">Sources folder</label>
-        <select id="src"><option>sources/</option></select>
-      </div>
-      <div class="field" style="width:150px">
-        <label class="lbl" for="words">Length (words)</label>
-        <select id="words">
-          <option value="200-400">200 – 400</option>
-          <option value="401-600" selected>401 – 600</option>
-          <option value="601-800">601 – 800</option>
-          <option value="801-1000">801 – 1000</option>
-          <option value="1001-1500">1001 – 1500</option>
-          <option value="1501-2000">1501 – 2000</option>
-          <option value="2001-2500">2001 – 2500</option>
-          <option value="2501-3000">2501 – 3000</option>
-          <option value="3001-4000">3001 – 4000</option>
-          <option value="4001-5000">4001 – 5000</option>
-        </select>
-      </div>
-      <div class="field" style="width:130px">
-        <label class="lbl" for="tone">Tone</label>
-        <select id="tone">
-          <option value="normal" selected>Normal</option><option value="exciting">Exciting</option>
-          <option value="happy">Happy</option><option value="sad">Sad</option>
-          <option value="factual">Factual</option><option value="funny">Funny</option>
-          <option value="inspirational">Inspirational</option><option value="professional">Professional</option>
-          <option value="casual">Casual</option><option value="dramatic">Dramatic</option>
-          <option value="serious">Serious</option><option value="curious">Curious</option>
-          <option value="nostalgic">Nostalgic</option><option value="persuasive">Persuasive</option>
-        </select>
-      </div>
-      <div class="field" style="width:130px">
-        <label class="lbl" for="images">Images</label>
-        <select id="images">
-          <option value="auto" selected>Where needed</option><option value="yes">Include</option><option value="no">None</option>
-        </select>
-      </div>
-      <button id="generate" class="btn pri" type="button" style="min-width:140px">Generate post</button>
-    </section>
-
-    <section class="card pipeline" aria-label="Agent pipeline">
-      <div class="step" data-stage="researcher"><span class="ico"></span><div><div class="name">Researcher</div><div class="mut sub">Waiting</div></div></div>
-      <div class="link"></div>
-      <div class="step" data-stage="writer"><span class="ico"></span><div><div class="name">Writer</div><div class="mut sub">Waiting</div></div></div>
-      <div class="link"></div>
-      <div class="step" data-stage="editor"><span class="ico"></span><div><div class="name">Editor</div><div class="mut sub">Waiting</div></div></div>
-    </section>
-    <div id="error" class="err hidden" role="alert"></div>
-
-    <div class="work">
-      <section class="card panel">
-        <div class="tabs" role="tablist">
-          <button class="tab" role="tab" data-tab="facts">Facts</button>
-          <button class="tab" role="tab" data-tab="draft">Draft</button>
-          <button class="tab on" role="tab" data-tab="final">Final post</button>
-        </div>
-        <article id="tabBody" class="body"></article>
-        <div class="foot">
-          <span id="saveHint" class="mut"></span>
-          <div style="display:flex;gap:8px"><button id="copy" class="btn" type="button" disabled>Copy Markdown</button><button id="save" class="btn pri" type="button" disabled>Save to file</button></div>
-        </div>
-      </section>
-      <aside class="card chunks">
-        <div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl">Retrieved from sources</span><span id="chunkCount" class="pill" style="background:#DCFCE7;color:#166534">0 facts</span></div>
-        <div id="chunkList"></div>
-      </aside>
     </div>
-  </div>
+    <input id="fileInput" type="file" accept=".txt,.md,.pdf" multiple class="hidden">
+  </section>
 
   <!-- SAVED POSTS -->
-  <div id="view-saved" class="page hidden" style="flex:1;overflow:hidden">
+  <section id="view-saved" class="page hidden">
     <div class="saved">
       <aside class="card plist"><div class="lbl" style="padding:2px 2px 4px">Saved posts</div><div id="savedList" style="display:flex;flex-direction:column;gap:8px"></div></aside>
-      <section class="card panel">
-        <article id="savedBody" class="body"><p class="placeholder">Select a saved post to open it.</p></article>
-        <div class="foot"><span id="savedName" class="mut"></span>
+      <section class="card viewer">
+        <article id="savedBody" class="post"><p class="placeholder">Select a saved post to open it.</p></article>
+        <div class="vfoot"><span id="savedName" class="mut"></span>
           <div style="display:flex;gap:8px"><button id="exPdf" class="btn" type="button" disabled>Export PDF</button><button id="exTxt" class="btn" type="button" disabled>Export TXT</button></div>
         </div>
       </section>
     </div>
-  </div>
+  </section>
 
-  <!-- SOURCES LIBRARY -->
-  <div id="view-sources" class="page hidden">
-    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
+  <!-- SOURCES -->
+  <section id="view-sources" class="page hidden">
+    <div class="pcol"><div class="card" style="padding:20px;display:flex;flex-direction:column;gap:12px">
       <div style="display:flex;justify-content:space-between;align-items:center"><span class="lbl">Sources folder</span><span id="srcCount" class="mut">0 files</span></div>
       <div id="srcList" style="display:flex;flex-direction:column;gap:8px"></div>
-      <div style="display:flex;gap:8px;margin-top:8px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px">
         <button id="addFiles" class="btn" type="button">Add files</button>
         <button id="ingest" class="btn" type="button">Re-run ingestion</button>
       </div>
-      <div style="display:flex;gap:8px">
-        <input id="linkUrl" type="text" placeholder="Paste a web link (https://…) or a PDF link" style="flex:1;height:44px;border:1px solid #D1D5DB;border-radius:8px;padding:0 14px;font:inherit">
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <input id="linkUrl" class="linkin" type="text" placeholder="Paste a web link (https://…) or a PDF link" aria-label="Web or PDF link">
         <button id="addLink" class="btn" type="button">Add link</button>
-        <input id="fileInput" type="file" accept=".txt,.md,.pdf" multiple class="hidden">
       </div>
-    </section>
-  </div>
-
-  <!-- SETTINGS -->
-  <div id="view-settings" class="page hidden">
-    <section class="card" style="padding:20px;display:flex;flex-direction:column;gap:8px">
-      <div class="lbl">Configuration</div>
-      <div class="mut">Model: <strong id="setModel"></strong></div>
-      <div class="mut">Settings are read from <code>.env</code> / <code>blog_factory/config.py</code>.</div>
-    </section>
-  </div>
+    </div></div>
+  </section>
 </main>
 </div>
 <div id="toast" class="toast hidden" role="status"></div>
@@ -221,43 +308,44 @@ aside.chunks{width:320px;flex:none;padding:16px;display:flex;flex-direction:colu
 <script>
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
-const state = { facts: "", draft: "", final: "", tab: "final", running: false, topic: "", saved: [] };
 
-const ICON = {
-  waiting: '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#fff" stroke="#C7CBE0" stroke-width="2"/></svg>',
-  running: '<svg class="spin" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="12" fill="#fff" stroke="#4338CA" stroke-width="3" stroke-dasharray="40 40"/></svg>',
-  done: '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#15803D"/><path d="M8 14.5l4 4 8-9" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-  failed: '<svg width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="14" fill="#B91C1C"/><path d="M9 9l10 10M19 9L9 19" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></svg>',
-};
+// ---------- options ----------
+const TONES = ["normal","exciting","happy","sad","factual","funny","inspirational","professional","casual","dramatic","serious","curious","nostalgic","persuasive"];
+const LENGTHS = ["200-400","401-600","601-800","801-1000","1001-1500","1501-2000","2001-2500","2501-3000","3001-4000","4001-5000"];
+const IMAGES = [["auto","Where needed"],["yes","Include"],["no","None"]];
+const cap = s => s[0].toUpperCase() + s.slice(1);
+const lenLabel = l => l.replace("-", " – ");
+const opts = { tone: "normal", words: "200-400", images: "auto" };
+try { Object.assign(opts, JSON.parse(localStorage.getItem("pf.opts2") || "{}")); } catch {}
+
+// ---------- state ----------
+let chats = [];
+try { chats = JSON.parse(localStorage.getItem("pf.chats") || "[]"); } catch {}
+chats.forEach(c => { if (c.status === "running") { c.status = "failed"; c.error = c.error || "Interrupted — the page was reloaded while generating."; } });
+let cur = null;        // current chat id (null = new chat screen)
+let agent = "editor";  // selected agent view
+let view = "chat";
+let running = false;
+const stageKey = { researcher: "facts", writer: "draft", editor: "final" };
 const STAGES = ["researcher", "writer", "editor"];
+const AGENT_NAME = { researcher: "Research", writer: "Writer", editor: "Editor" };
 const SUBTEXT = {
-  researcher: { waiting: "Waiting", running: "Searching the web", done: "Facts retrieved" },
-  writer: { waiting: "Waiting", running: "Drafting the post", done: "Draft complete" },
-  editor: { waiting: "Waiting", running: "Polishing language and title", done: "Final post ready" },
+  researcher: { running: "Searching the web", done: "Facts retrieved" },
+  writer: { running: "Drafting the post", done: "Draft complete" },
+  editor: { running: "Polishing language and title", done: "Final post ready" },
 };
-const STATUS = {
-  idle: ["Idle", "#E5E7EB", "#374151"], researcher: ["Researcher running", "#FEF3C7", "#92400E"],
-  writer: ["Writer running", "#FEF3C7", "#92400E"], editor: ["Editor running", "#FEF3C7", "#92400E"],
-  done: ["Done", "#DCFCE7", "#166534"], failed: ["Failed", "#FEE2E2", "#991B1B"], empty: ["No facts found", "#FEE2E2", "#991B1B"],
-};
-
-function esc(t) { return t.replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
-function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add("hidden"), 2800); }
-function setStatus(key) { const [txt, bg, fg] = STATUS[key]; const s = $("#status"); s.textContent = txt; s.style.background = bg; s.style.color = fg; }
-
-function setStep(stage, st) {
-  const el = $(`.step[data-stage="${stage}"]`);
-  $(".ico", el).innerHTML = ICON[st];
-  $(".sub", el).textContent = st === "failed" ? "Failed" : SUBTEXT[stage][st];
-  const idx = STAGES.indexOf(stage);
-  if (idx > 0) $$(".link")[idx - 1].classList.toggle("done", st !== "waiting");
-  if (idx < 2 && st === "done") $$(".link")[idx].classList.add("done");
+const getChat = () => chats.find(c => c.id === cur);
+function persist() {
+  try { localStorage.setItem("pf.chats", JSON.stringify(chats.slice(0, 50))); } catch {}
 }
-function resetPipeline() { $$(".link").forEach(l => l.classList.remove("done")); STAGES.forEach(s => setStep(s, "waiting")); $$(".link").forEach(l => l.classList.remove("done")); }
+function persistOpts() { try { localStorage.setItem("pf.opts2", JSON.stringify(opts)); } catch {} }
 
-// --- parsing -------------------------------------------------------------
+// ---------- helpers ----------
+function esc(t) { return String(t).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])); }
+function toast(msg) { const t = $("#toast"); t.textContent = msg; t.classList.remove("hidden"); clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.add("hidden"), 2800); }
+function words(t) { return (t.replace(/!\[[^\]]*\]\([^)]*\)/g, "").match(/\S+/g) || []).length; }
 function parseFacts(text) {
-  return text.split("\n").map(l => l.trim()).filter(l => /^[-*•]\s+/.test(l)).map(l => {
+  return (text || "").split("\n").map(l => l.trim()).filter(l => /^[-*•]\s+/.test(l)).map(l => {
     l = l.replace(/^[-*•]\s+/, "");
     const m = l.match(/\[(https?:\/\/[^\]\s]+)\]\s*$/);
     return { text: m ? l.slice(0, m.index).trim() : l, url: m ? m[1] : "" };
@@ -281,51 +369,210 @@ function md(text) {
   }
   flush(); return out.join("");
 }
+const ICON = {
+  running: '<svg class="spin" width="14" height="14" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" stroke="currentColor" stroke-width="4" stroke-dasharray="40 40"/></svg>',
+  done: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  failed: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  waiting: '<svg width="14" height="14" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="2.5"/></svg>',
+};
+const SVG = {
+  copy: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+  redo: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-2.5-5.8M20 4v5h-5"/></svg>',
+};
 
-// --- rendering -----------------------------------------------------------
-function renderTab() {
-  $$(".tab").forEach(t => t.classList.toggle("on", t.dataset.tab === state.tab));
-  const body = $("#tabBody");
-  if (state.tab === "facts") {
-    const facts = parseFacts(state.facts);
-    body.innerHTML = facts.length ? facts.map(f => `<div class="fact"><span>•</span><span>${esc(f.text)}</span><span class="src" title="${esc(f.url)}">${esc(host(f.url))}</span></div>`).join("")
-      : `<p class="placeholder">Facts appear here once the researcher has finished.</p>`;
-  } else if (state.tab === "draft") {
-    body.innerHTML = state.draft ? md(state.draft) : `<p class="placeholder">The writer's draft appears here.</p>`;
+// ---------- sidebar ----------
+function renderChats() {
+  const q = $("#chatSearch").value.trim().toLowerCase();
+  const list = chats.filter(c => !q || c.topic.toLowerCase().includes(q));
+  const today = new Date().toDateString();
+  const groups = [["Today", list.filter(c => new Date(c.ts).toDateString() === today)], ["Earlier", list.filter(c => new Date(c.ts).toDateString() !== today)]];
+  $("#chatList").innerHTML = list.length ? groups.filter(g => g[1].length).map(([name, items]) =>
+    `<div class="lbl">${name}</div>` + items.map(c => `<div class="chatrow${c.id === cur && view === "chat" ? " on" : ""}" role="listitem"><button class="t" type="button" data-id="${c.id}" title="${esc(c.topic)}">${esc(c.title || c.topic)}</button><button class="x" type="button" data-del="${c.id}" aria-label="Delete chat ${esc(c.topic)}">✕</button></div>`).join("")).join("")
+    : `<div class="lbl" style="font-weight:500;text-transform:none;letter-spacing:0;font-size:13px">${q ? "No chats match." : "No chats yet."}</div>`;
+}
+function openChat(id) { cur = id; const c = getChat(); if (c && c.status !== "running") agent = "editor"; show("chat"); closeNav(); }
+function newChat() { if (running) { toast("Wait for the current post to finish."); return; } cur = null; agent = "editor"; show("chat"); closeNav(); $("#topic").focus(); }
+function delChat(id) {
+  const c = chats.find(x => x.id === id); if (!c || c.status === "running") return;
+  chats = chats.filter(x => x.id !== id); persist(); if (cur === id) cur = null; renderAll();
+}
+const openNav = () => { document.body.classList.add("nav-open"); };
+function closeNav() { document.body.classList.remove("nav-open"); }
+
+// ---------- rendering ----------
+function stageState(c, s) { return (c.stages && c.stages[s]) || "waiting"; }
+function agentCard(c) {
+  const st = stageState(c, agent);
+  const text = c[stageKey[agent]] || "";
+  const busy = c.status === "running";
+  const doneTxt = st === "running" ? "Working…" : st === "done" ? "Done" : st === "failed" ? "Failed" : "Waiting";
+  let head, body, acts = "";
+  if (agent === "researcher") {
+    const f = parseFacts(text);
+    head = `Research · ${f.length} fact${f.length === 1 ? "" : "s"} from ${new Set(f.map(x => host(x.url))).size} source${new Set(f.map(x => host(x.url))).size === 1 ? "" : "s"}`;
+    body = f.length ? f.map(x => `<div class="fcard">${esc(x.text)}<br>${x.url ? `<a class="src" href="${esc(x.url)}" target="_blank" rel="noopener" title="${esc(x.url)}">${esc(host(x.url))}</a>` : ""}</div>`).join("")
+      : `<p class="placeholder">${st === "running" ? "Searching the web…" : "Facts appear here once the researcher has finished."}</p>`;
   } else {
-    body.innerHTML = state.final ? md(state.final) : `<p class="placeholder">The final post appears here once the editor has finished.</p>`;
+    const label = agent === "writer" ? "Draft" : "Final post";
+    head = text ? `${label} · ${words(text)} words` : label;
+    body = text ? `<article class="post">${md(text)}</article>` : `<p class="placeholder">${agent === "writer" ? "The writer's draft appears here." : "The final post appears here once the editor has finished."}</p>`;
+    if (!busy && text) {
+      acts = agent === "writer"
+        ? `<div class="ract"><button class="btn" type="button" data-act="regen">Regenerate</button><button class="btn pri" type="button" data-act="toEditor">Send to editor</button></div>`
+        : `<div class="ract"><button class="btn" type="button" data-act="copy">Copy Markdown</button><button class="btn pri" type="button" data-act="save">Save to file</button></div>`;
+    }
+  }
+  return `<div class="card result"><div class="rhead"><strong>${esc(head)}</strong><span class="mut">${doneTxt}</span></div>${body}${acts}</div>`;
+}
+function stepChips(c) {
+  return `<div class="steps">` + STAGES.map(s => {
+    const st = stageState(c, s);
+    const cls = st === "done" ? "ok" : st === "running" ? "run" : st === "failed" ? "bad" : "";
+    return `<span class="chip ${cls}">${ICON[st]}${AGENT_NAME[s]}${st === "running" ? " · " + SUBTEXT[s].running : ""}</span>`;
+  }).join("") + `</div>`;
+}
+function botIntro(c) {
+  if (c.status === "running") return "Working on it. Switch agents above to watch each step.";
+  if (c.status === "done") return "Done. Choose an agent above to see its work.";
+  if (c.status === "empty") return "I couldn't find anything relevant on the web for that topic. Try rephrasing it.";
+  return "Something went wrong.";
+}
+function renderThread() {
+  const th = $("#thread"), c = getChat();
+  const keep = th.scrollTop, atEnd = th.scrollHeight - th.scrollTop - th.clientHeight < 80;
+  if (!c) {
+    th.innerHTML = `<div class="empty"><div class="avatar" style="width:56px;height:56px"><svg width="30" height="30" viewBox="0 0 32 32"><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#4338CA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <h2>What should we write about?</h2><p>A researcher, a writer and an editor agent work in sequence on your sources and the web. Type a topic or tap the mic.</p>
+      <div class="sugg">${["The history of chess", "How vaccines work", "A beginner's guide to composting"].map(s => `<button type="button" data-sugg="${esc(s)}">${esc(s)}</button>`).join("")}</div></div>`;
+    return;
+  }
+  const o = c.opts || opts;
+  th.innerHTML = `<div class="col">
+    <div class="me"><div class="bub">${esc(c.topic)}<small>${esc(cap(o.tone))} · ${lenLabel(o.words)} words · Images: ${esc((IMAGES.find(i => i[0] === o.images) || IMAGES[0])[1])}</small></div></div>
+    <div class="bot"><div class="avatar" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 32 32"><path d="M9 21V11l7 4 7-4v10" fill="none" stroke="#4338CA" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="botbody"><p>${esc(botIntro(c))}</p>${stepChips(c)}${c.error ? `<div class="err" role="alert">${esc(c.error)}</div>` : ""}${c.status === "empty" ? "" : agentCard(c)}
+      ${c.status === "done" ? `<div class="mini"><button type="button" aria-label="Copy post" data-act="copy">${SVG.copy}</button><button type="button" aria-label="Regenerate" data-act="regen">${SVG.redo}</button></div>` : ""}
+      ${c.status === "failed" || c.status === "empty" ? `<div class="ract"><button class="btn" type="button" data-act="regen">Try again</button></div>` : ""}</div></div></div>`;
+  if (atEnd || c.status === "running" && c._follow) th.scrollTop = th.scrollHeight; else th.scrollTop = keep;
+}
+function renderSeg() {
+  const c = getChat();
+  $$(".sg").forEach(b => {
+    const a = b.dataset.agent, on = a === agent;
+    b.classList.toggle("on", on); b.setAttribute("aria-pressed", on);
+    const st = c ? stageState(c, a) : "waiting";
+    const d = $(".dot", b); d.className = "dot" + (st === "running" ? " run" : st === "done" ? " ok" : st === "failed" ? " bad" : "");
+  });
+}
+function renderHeader() {
+  const c = getChat();
+  $("#title").textContent = view === "chat" ? (c ? (c.title || c.topic) : "New chat") : ({ saved: "Saved posts", sources: "Sources library" })[view];
+  $("#segwrap").style.visibility = view === "chat" && c ? "visible" : "hidden";
+  $("#saveTop").disabled = !(c && c.final && c.status === "done"); $("#saveTop").classList.toggle("hidden", view !== "chat");
+}
+function renderAll() { renderChats(); renderHeader(); renderSeg(); if (view === "chat") renderThread(); updateComposer(); }
+
+// ---------- composer ----------
+let popMenu = null, popOpen = false;
+function renderPop() {
+  const p = $("#pop");
+  p.classList.toggle("hidden", !popOpen);
+  $("#optBtn").setAttribute("aria-expanded", popOpen);
+  if (!popOpen) return;
+  const row = (k, name, val) => `<button class="prow" type="button" role="menuitem" data-menu="${k}"><span>${name}</span><span>${esc(val)} ›</span></button>`;
+  if (!popMenu) {
+    p.innerHTML = `<div class="lbl">Post options</div>${row("tone", "Tone", cap(opts.tone))}${row("words", "Length", lenLabel(opts.words) + " words")}${row("images", "Images", IMAGES.find(i => i[0] === opts.images)[1])}`;
+  } else {
+    const list = popMenu === "tone" ? TONES.map(t => [t, cap(t)]) : popMenu === "words" ? LENGTHS.map(l => [l, lenLabel(l)]) : IMAGES;
+    p.innerHTML = `<button class="back" type="button" data-menu="">‹ ${popMenu === "tone" ? "Tone" : popMenu === "words" ? "Length (words)" : "Images"}</button><div class="opts">${list.map(([v, l]) => `<button class="opt${opts[popMenu] === v ? " on" : ""}" type="button" data-set="${v}" aria-pressed="${opts[popMenu] === v}">${esc(l)}</button>`).join("")}</div>`;
   }
 }
-function renderChunks() {
-  const facts = parseFacts(state.facts);
-  $("#chunkCount").textContent = `${facts.length} fact${facts.length === 1 ? "" : "s"}`;
-  $("#chunkList").style.cssText = "display:flex;flex-direction:column;gap:12px";
-  $("#chunkList").innerHTML = facts.map(f => `<div class="chunk"><span class="pill" title="${esc(f.url)}">${esc(host(f.url))}</span><br>${esc(f.text)}</div>`).join("")
-    || `<div class="mut">Nothing retrieved yet.</div>`;
+function setPop(open) { popOpen = open; if (!open) popMenu = null; renderPop(); }
+const touch = matchMedia("(pointer:coarse)");
+function updateComposer() {
+  const t = $("#topic"), f = $("#composer"), m = $("#mirror");
+  t.disabled = running;
+  $("#sendBtn").disabled = running || !t.value.trim();
+  t.placeholder = running ? "Generating..." : "Write about a topic...";
+  // would the text wrap on a single row? measure at the one-row textarea width
+  const cs = getComputedStyle(f), gap = 4;
+  const one = f.clientWidth - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight) - $(".cl").offsetWidth - $(".cr").offsetWidth - gap * 2;
+  m.style.width = Math.max(60, one) + "px"; m.value = t.value;
+  const lh = parseFloat(getComputedStyle(t).lineHeight) || 21;
+  f.classList.toggle("multi", t.value !== "" && m.scrollHeight > lh + 18 + 1);
+  t.style.height = "auto";
+  const max = matchMedia("(max-width:640px)").matches ? 140 : 200;
+  t.style.height = Math.min(max, Math.max(40, t.scrollHeight)) + "px";
 }
-function render() { renderTab(); renderChunks(); }
+window.addEventListener("resize", updateComposer);
 
-// --- generate ------------------------------------------------------------
-function showError(msg) { const e = $("#error"); e.textContent = msg || ""; e.classList.toggle("hidden", !msg); }
-function lockUI(on) { state.running = on; $("#generate").disabled = on; $("#topic").disabled = $("#words").disabled = $("#tone").disabled = $("#images").disabled = on; $("#generate").textContent = on ? "Generating…" : "Generate post"; }
-
-async function generate() {
-  const topic = $("#topic").value.trim();
-  if (!topic) { showError("Enter a topic first."); $("#topic").focus(); return; }
-  showError("");
-  Object.assign(state, { facts: "", draft: "", final: "", topic, tab: "facts" });
-  $("#copy").disabled = $("#save").disabled = true;
-  resetPipeline(); render(); lockUI(true); setStatus("idle");
-  let current = null, finished = false;
-
-  const begin = stage => {
-    if (current && current !== stage) setStep(current, "done");
-    current = stage; setStep(stage, "running"); setStatus(stage);
-    state.tab = stage === "researcher" ? "facts" : stage === "writer" ? "draft" : "final"; renderTab();
+// ---------- voice (streamed live to Deepgram through the server) ----------
+const CAN_REC = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
+let rec = null, recStream = null, recWs = null, recBase = "", recFinal = "", recCancel = false, recClosing = false;
+function micUI(on) { const m = $("#micBtn"); m.classList.toggle("rec", on); m.setAttribute("aria-pressed", on); m.setAttribute("aria-label", on ? "Stop recording" : "Speak instead of typing"); }
+function showLive(interim) {
+  const t = $("#topic"), parts = [recBase, recFinal, interim].filter(Boolean);
+  t.value = parts.join(" "); updateComposer(); t.scrollTop = t.scrollHeight;
+}
+function cleanupMic() {
+  try { rec && rec.state !== "inactive" && rec.stop(); } catch {}
+  if (recStream) recStream.getTracks().forEach(t => t.stop());
+  rec = recStream = null; micUI(false);
+}
+async function startMic() {
+  if (running || rec) return;
+  setPop(false);
+  try { recStream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+  catch { toast("Microphone permission was denied."); return; }
+  recBase = $("#topic").value.trim(); recFinal = ""; recCancel = false; recClosing = false;
+  const ws = recWs = new WebSocket((location.protocol === "https:" ? "wss://" : "ws://") + location.host + "/api/listen");
+  ws.onmessage = e => {
+    const m = JSON.parse(e.data);
+    if (m.error) { toast(m.error); cleanupMic(); return; }
+    if (recCancel) return;
+    if (m.final) { recFinal = (recFinal ? recFinal + " " : "") + m.text; showLive(""); } else showLive(m.text);
   };
+  ws.onerror = () => { if (!recClosing) { toast("Could not reach the speech service."); cleanupMic(); } };
+  ws.onclose = () => { cleanupMic(); recWs = null; if (!recCancel) { showLive(""); $("#topic").focus(); } };
+  ws.onopen = () => {
+    try {
+      rec = new MediaRecorder(recStream);
+      rec.ondataavailable = e => { if (e.data.size && ws.readyState === 1) ws.send(e.data); };
+      rec.onstop = () => { if (ws.readyState === 1) ws.send("stop"); };
+      rec.start(250); micUI(true);
+    } catch { toast("Could not start recording."); cleanupMic(); ws.close(); }
+  };
+}
+function stopMic(cancel) {
+  recCancel = !!cancel; recClosing = true;
+  if (cancel) { $("#topic").value = recBase; updateComposer(); }
+  if (rec && rec.state !== "inactive") { try { rec.stop(); } catch {} }   // triggers "stop" -> server flushes last words
+  else if (recWs) recWs.close();
+  if (cancel && recWs) recWs.close();
+  micUI(false);
+}
+if (!CAN_REC) $("#micBtn").classList.add("hidden");
 
+// ---------- generate ----------
+function makeTitle(t) { return t.length > 48 ? t.slice(0, 46).trimEnd() + "…" : t; }
+async function generate(topic, o, existing) {
+  if (running) return;
+  let c = existing;
+  if (!c) { c = { id: "c" + Date.now(), topic, title: makeTitle(topic), opts: { ...o }, ts: Date.now() }; chats.unshift(c); }
+  Object.assign(c, { facts: "", draft: "", final: "", status: "running", error: "", stages: {}, ts: Date.now(), _follow: true });
+  cur = c.id; agent = "researcher"; view = "chat"; running = true;
+  renderAll(); persist();
+  let current = null, finished = false;
+  const setStage = (s, st) => { c.stages[s] = st; };
+  const begin = stage => {
+    if (current && current !== stage) setStage(current, "done");
+    current = stage; setStage(stage, "running");
+    if (cur === c.id) agent = stage;
+    renderChats(); renderHeader(); renderSeg(); if (cur === c.id) renderThread();
+  };
   try {
-    const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic, words_min: +$("#words").value.split("-")[0], words_max: +$("#words").value.split("-")[1], tone: $("#tone").value, images: $("#images").value }) });
+    const [wmin, wmax] = c.opts.words.split("-").map(Number);
+    const res = await fetch("/api/generate", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ topic: c.topic, words_min: wmin, words_max: wmax, tone: c.opts.tone, images: c.opts.images }) });
     if (!res.ok) throw new Error((await res.json().catch(() => ({}))).detail || `Server error ${res.status}`);
     const reader = res.body.getReader(), dec = new TextDecoder(); let buf = "";
     for (;;) {
@@ -337,38 +584,48 @@ async function generate() {
         if (!line.startsWith("data:")) continue;
         const ev = JSON.parse(line.slice(5));
         if (ev.type === "stage") begin(ev.stage);
-        else if (ev.type === "chunk") {
-          const key = ev.stage === "researcher" ? "facts" : ev.stage === "writer" ? "draft" : "final";
-          state[key] += ev.text; renderTab(); if (key === "facts") renderChunks();
-        } else if (ev.type === "done") {
-          finished = true; state.final = ev.post; STAGES.forEach(s => setStep(s, "done")); setStatus("done");
-          state.tab = "final"; render(); $("#copy").disabled = $("#save").disabled = false;
+        else if (ev.type === "chunk") { c[stageKey[ev.stage]] += ev.text; if (cur === c.id && view === "chat") renderThread(); }
+        else if (ev.type === "done") {
+          finished = true; c.final = ev.post; STAGES.forEach(s => setStage(s, "done")); c.status = "done";
+          const h = ev.post.match(/^#\s+(.+)/m); if (h) c.title = makeTitle(h[1].replace(/[*_`]/g, ""));
+          if (cur === c.id) agent = "editor";
         } else if (ev.type === "empty") {
-          finished = true; if (current) setStep(current, "failed"); setStatus("empty");
-          showError("The web search found nothing relevant for this topic.");
-        } else if (ev.type === "note") { const s = $('.step[data-stage="editor"] .sub'); if (s) s.textContent = ev.text; if (ev.text.startsWith("Warning")) { toast(ev.text); showError(ev.text); } }
-        else if (ev.type === "error") { throw new Error(ev.message); }
+          finished = true; if (current) setStage(current, "failed"); c.status = "empty";
+        } else if (ev.type === "note") { if (ev.text.startsWith("Warning")) { toast(ev.text); c.error = ev.text; } }
+        else if (ev.type === "error") throw new Error(ev.message);
       }
     }
     if (!finished) throw new Error("The connection closed before the post was finished.");
   } catch (e) {
-    if (current) setStep(current, "failed"); setStatus("failed"); showError(e.message);
-  } finally { lockUI(false); }
+    if (current) setStage(current, "failed"); c.status = "failed"; c.error = e.message;
+  } finally {
+    c._follow = false; running = false; persist(); renderAll();
+  }
+}
+function submitTopic(text) {
+  const topic = (text ?? $("#topic").value).trim();
+  if (!topic) { toast("Enter a topic first."); $("#topic").focus(); return; }
+  setPop(false); stopMic(true);
+  $("#topic").value = ""; updateComposer();
+  if (touch.matches) $("#topic").blur();
+  generate(topic, opts);
 }
 
-// --- actions -------------------------------------------------------------
+// ---------- actions ----------
 async function copyMd() {
-  try { await navigator.clipboard.writeText(state.final); toast("Markdown copied"); }
+  const c = getChat(); if (!c) return;
+  try { await navigator.clipboard.writeText(c.final); toast("Markdown copied"); }
   catch { toast("Copy failed — select the text manually"); }
 }
 async function savePost() {
-  $("#save").disabled = true;
+  const c = getChat(); if (!c || !c.final) return;
+  $("#saveTop").disabled = true;
   try {
-    const r = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post: state.final, topic: state.topic }) });
+    const r = await fetch("/api/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ post: c.final, topic: c.topic }) });
     if (!r.ok) throw new Error("Save failed");
-    $("#saveHint").textContent = "Post saved successfully"; toast("Post saved successfully");
+    toast("Post saved successfully");
   } catch (e) { toast(e.message); }
-  $("#save").disabled = false;
+  renderHeader();
 }
 let openPost = null;
 async function loadSaved(select) {
@@ -417,16 +674,15 @@ async function exportPdf() {
   b.disabled = false; b.textContent = "Export PDF";
 }
 
-// --- sources -------------------------------------------------------------
+// ---------- sources ----------
 function renderSources(d) {
   $("#srcCount").textContent = `${d.files.length} file${d.files.length === 1 ? "" : "s"}`;
   $("#srcList").innerHTML = d.files.map(f => `<div class="srcrow"><span>${esc(f.name)}</span><span class="mut">${f.chunks} chunks</span></div>`).join("") || '<div class="mut">No files yet.</div>';
-  $("#src").innerHTML = `<option>${esc(d.folder)}/ (${d.files.length} file${d.files.length === 1 ? "" : "s"})</option>`;
 }
 async function loadConfig() {
   try {
     const d = await (await fetch("/api/config")).json();
-    renderSources(d); $("#modelName").textContent = d.model; $("#setModel").textContent = d.model;
+    renderSources(d);
   } catch { toast("Could not reach the server"); }
 }
 async function addFiles(files) {
@@ -463,35 +719,61 @@ async function ingest() {
   b.disabled = false; b.textContent = "Re-run ingestion";
 }
 
-// --- navigation ----------------------------------------------------------
-const TITLES = {
-  new: ["New blog post", "Researcher, writer and editor agents work in sequence on your sources."],
-  saved: ["Saved posts", "Posts you saved during this session."],
-  sources: ["Sources library", "Reference files used by the agents."],
-  settings: ["Settings", "Current configuration."],
-};
-function show(view) {
-  $$(".nav").forEach(n => n.classList.toggle("on", n.dataset.view === view));
-  ["new", "saved", "sources", "settings"].forEach(v => $("#view-" + v).classList.toggle("hidden", v !== view));
-  $("#title").textContent = TITLES[view][0]; $("#subtitle").textContent = TITLES[view][1];
-  $("#status").classList.toggle("hidden", view !== "new");
-  if (view === "saved") loadSaved(openPost && openPost.name);
+// ---------- navigation ----------
+function show(v) {
+  view = v;
+  $$(".nav").forEach(n => n.classList.toggle("on", n.dataset.view === v));
+  ["chat", "saved", "sources"].forEach(x => $("#view-" + x).classList.toggle("hidden", x !== v));
+  $("#view-chat").style.display = v === "chat" ? "flex" : "none";
+  if (v === "saved") loadSaved(openPost && openPost.name);
+  setPop(false); renderAll();
+  if (v !== "chat") closeNav();
 }
-$$(".nav").forEach(n => { n.addEventListener("click", () => show(n.dataset.view)); n.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); show(n.dataset.view); } }); });
-$$(".tab").forEach(t => t.addEventListener("click", () => { state.tab = t.dataset.tab; renderTab(); }));
-$("#generate").addEventListener("click", generate);
-$("#topic").addEventListener("keydown", e => { if (e.key === "Enter" && !state.running) generate(); });
-$("#copy").addEventListener("click", copyMd);
-$("#exPdf").addEventListener("click", exportPdf);
-$("#exTxt").addEventListener("click", exportTxt);
-$("#save").addEventListener("click", savePost);
+
+// ---------- events ----------
+$("#newChat").addEventListener("click", newChat);
+$("#newChatTop").addEventListener("click", newChat);
+$("#menuBtn").addEventListener("click", openNav);
+$("#scrim").addEventListener("click", closeNav);
+$("#chatSearch").addEventListener("input", renderChats);
+$("#chatList").addEventListener("click", e => {
+  const d = e.target.closest("[data-del]"); if (d) { delChat(d.dataset.del); return; }
+  const t = e.target.closest("[data-id]"); if (t) { if (running && t.dataset.id !== cur) { toast("Wait for the current post to finish."); return; } openChat(t.dataset.id); }
+});
+$$(".nav").forEach(n => n.addEventListener("click", () => show(n.dataset.view)));
+$$(".sg").forEach(b => b.addEventListener("click", () => { agent = b.dataset.agent; renderSeg(); renderThread(); }));
+$("#saveTop").addEventListener("click", savePost);
+$("#thread").addEventListener("click", e => {
+  const s = e.target.closest("[data-sugg]"); if (s) { $("#topic").value = s.dataset.sugg; $("#topic").focus(); updateComposer(); return; }
+  const a = e.target.closest("[data-act]"); if (!a) return;
+  const c = getChat();
+  if (a.dataset.act === "copy") copyMd();
+  else if (a.dataset.act === "save") savePost();
+  else if (a.dataset.act === "toEditor") { agent = "editor"; renderSeg(); renderThread(); }
+  else if (a.dataset.act === "regen" && c) generate(c.topic, c.opts, c);
+});
+$("#composer").addEventListener("submit", e => { e.preventDefault(); submitTopic(); });
+$("#topic").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey && !e.isComposing && !touch.matches) { e.preventDefault(); submitTopic(); } });
+$("#topic").addEventListener("input", updateComposer);
+$("#optBtn").addEventListener("click", () => setPop(!popOpen));
+$("#pop").addEventListener("click", e => {
+  e.stopPropagation(); // content is re-rendered below; keep the outside-click handler from closing the menu
+  const m = e.target.closest("[data-menu]"); if (m) { popMenu = m.dataset.menu || null; renderPop(); return; }
+  const s = e.target.closest("[data-set]"); if (s) { opts[popMenu] = s.dataset.set; persistOpts(); popMenu = null; renderPop(); }
+});
+document.addEventListener("click", e => { if (popOpen && !e.target.closest("#pop,#optBtn")) setPop(false); });
+document.addEventListener("keydown", e => { if (e.key === "Escape") { if (popOpen) { setPop(false); $("#optBtn").focus(); } else if (rec) stopMic(true); else closeNav(); } });
+$("#attachBtn").addEventListener("click", () => $("#fileInput").click());
 $("#addFiles").addEventListener("click", () => $("#fileInput").click());
 $("#fileInput").addEventListener("change", e => { if (e.target.files.length) addFiles(e.target.files); e.target.value = ""; });
+$("#micBtn").addEventListener("click", () => rec ? stopMic(false) : startMic());
+$("#exPdf").addEventListener("click", exportPdf);
+$("#exTxt").addEventListener("click", exportTxt);
 $("#ingest").addEventListener("click", ingest);
 $("#addLink").addEventListener("click", addLink);
 $("#linkUrl").addEventListener("keydown", e => { if (e.key === "Enter") addLink(); });
 
-resetPipeline(); render(); loadConfig();
+show("chat"); loadConfig();
 </script>
 </body>
 </html>
